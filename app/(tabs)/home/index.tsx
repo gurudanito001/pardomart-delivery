@@ -8,9 +8,8 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { NotificationSVG, SupportSVG, MenuSVG } from '../../../components/icons';
+import { NotificationSVG, SupportSVG, MenuSVG, DoubleArrowSVG, OrdersIconSVG } from '../../../components/icons';
 import OrderCard from '../../../components/OrderCard';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -47,13 +46,13 @@ const ORDERS_DATA = [
 
 export default function HomeScreen() {
   const handleGoOffline = () => {
-    // Handle go offline action
     console.log('Go offline pressed');
   };
 
-  const handlePreviewOrder = (orderId: string) => {
-    router.push(`/(tabs)/orders/${orderId}`);
+  const handlePreviewOrder = () => {
+    router.push('/(tabs)/orders/order-preview');
   };
+
 
   return (
     <View style={styles.container}>
@@ -74,7 +73,7 @@ export default function HomeScreen() {
 
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
-            <NotificationSVG width={24} height={24} color="#000" />
+            <NotificationSVG width={22} height={22} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
             <SupportSVG width={24} height={24} color="#000" />
@@ -84,11 +83,13 @@ export default function HomeScreen() {
 
       {/* Content Container */}
       <View style={styles.contentContainer}>
+        {/* Handle Bar */}
+        <View style={styles.handleBar} />
+
         {/* Go Offline Button */}
         <TouchableOpacity style={styles.goOfflineButton} onPress={handleGoOffline}>
           <View style={styles.offlineIconContainer}>
-            <Ionicons name="chevron-forward" size={20} color="#FFF" />
-            <Ionicons name="chevron-forward" size={20} color="#FFF" style={styles.secondIcon} />
+            <DoubleArrowSVG width={19} height={20} color="#FFF" />
           </View>
           <Text style={styles.goOfflineText}>Go Offline</Text>
         </TouchableOpacity>
@@ -97,7 +98,7 @@ export default function HomeScreen() {
         <View style={styles.myOrdersSection}>
           <View style={styles.myOrdersContent}>
             <View style={styles.myOrdersLeft}>
-              <Ionicons name="document-text-outline" size={24} color="#000" />
+              <OrdersIconSVG width={24} height={24} color="#000" />
               <Text style={styles.myOrdersText}>My Orders</Text>
             </View>
             <Text style={styles.ordersCount}>3 Orders</Text>
@@ -119,13 +120,10 @@ export default function HomeScreen() {
               time={order.time}
               date={order.date}
               units={order.units}
-              onPreviewOrder={() => handlePreviewOrder(order.id)}
+              onPreviewOrder={handlePreviewOrder}
             />
           ))}
         </ScrollView>
-
-        {/* Handle Bar */}
-        <View style={styles.handleBar} />
       </View>
     </View>
   );
@@ -138,7 +136,7 @@ const styles = StyleSheet.create({
   },
   worldMap: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.73,
+    height: 684,
     position: 'absolute',
     top: 0,
     left: 0,
@@ -148,8 +146,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 21,
-    paddingTop: 64,
-    height: 104,
+    paddingTop: 20,
     position: 'absolute',
     top: 0,
     left: 0,
@@ -163,6 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -172,7 +170,7 @@ const styles = StyleSheet.create({
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
+    gap: 10,
   },
   iconButton: {
     width: 40,
@@ -195,61 +193,67 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    paddingTop: 36,
+    paddingTop: 16,
     paddingHorizontal: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
-    height: SCREEN_HEIGHT * 0.88,
+    height: 650,
+  },
+  handleBar: {
+    width: 70,
+    height: 5,
+    backgroundColor: '#EEE',
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
   goOfflineButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#C43D28',
     borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginBottom: 14,
+    paddingHorizontal: 24,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 9,
     elevation: 2,
+    height: 48,
     position: 'relative',
   },
   offlineIconContainer: {
     position: 'absolute',
-    left: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
+    left: 4,
+    top: 3.2,
     backgroundColor: '#851403',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     borderRadius: 14,
     width: 49,
     height: 42,
     justifyContent: 'center',
-  },
-  secondIcon: {
-    marginLeft: -8,
+    alignItems: 'center',
   },
   goOfflineText: {
     fontSize: 18,
-    fontFamily: 'Raleway-700',
+    fontFamily: 'Raleway',
     fontWeight: '700',
     color: '#FFF',
     textAlign: 'center',
-    flex: 1,
     lineHeight: 25,
   },
   myOrdersSection: {
     backgroundColor: '#D9EDFF',
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 13,
-    marginBottom: 24,
+    paddingLeft: 13,
+    paddingRight: 17,
+    marginBottom: 20,
+    height: 48,
   },
   myOrdersContent: {
     flexDirection: 'row',
@@ -263,31 +267,23 @@ const styles = StyleSheet.create({
   },
   myOrdersText: {
     fontSize: 16,
-    fontFamily: 'Raleway-700',
+    fontFamily: 'Raleway',
     fontWeight: '700',
     color: '#000',
     lineHeight: 25,
   },
   ordersCount: {
     fontSize: 14,
-    fontFamily: 'Open Sans-700',
-    fontWeight: '700',
+    fontFamily: 'Open Sans',
+    fontWeight: '600',
     color: '#000',
     lineHeight: 25,
   },
   ordersList: {
     flex: 1,
-    marginBottom: 20,
   },
   ordersContent: {
+    gap: 14,
     paddingBottom: 20,
-  },
-  handleBar: {
-    width: 70,
-    height: 5,
-    backgroundColor: '#EEE',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
   },
 });

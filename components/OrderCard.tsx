@@ -5,7 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ShoppingBagIconSVG,
+  DeliveryTruckIconSVG,
+  ClockIconSVG,
+  CalendarIconSVG,
+  CartIconSVG
+} from './icons';
+import Svg, { Path } from 'react-native-svg';
 
 interface OrderCardProps {
   type: 'shop-deliver' | 'deliver';
@@ -16,6 +23,15 @@ interface OrderCardProps {
   units: string;
   onPreviewOrder: () => void;
 }
+
+const ChevronIcon = () => (
+  <Svg width={7} height={13} viewBox="0 0 7 13" fill="none">
+    <Path
+      d="M0.866949 12.4985C0.66474 12.4988 0.468777 12.4292 0.313076 12.3017C0.225444 12.2299 0.153007 12.1418 0.0999113 12.0423C0.0468157 11.9428 0.0141058 11.8339 0.00365506 11.7219C-0.0067957 11.6098 0.00521815 11.4969 0.0390082 11.3895C0.0727983 11.2821 0.1277 11.1823 0.200571 11.0958L4.07768 6.51173L0.339039 1.91906C0.267152 1.83158 0.213468 1.73092 0.181074 1.62286C0.148679 1.51481 0.138213 1.4015 0.150276 1.28944C0.16234 1.17738 0.196694 1.06878 0.251367 0.969879C0.306039 0.870982 0.379951 0.783737 0.468853 0.713159C0.558395 0.635301 0.663255 0.576573 0.776853 0.540662C0.89045 0.504751 1.01033 0.492432 1.12898 0.504478C1.24762 0.516525 1.36246 0.552676 1.4663 0.610663C1.57014 0.66865 1.66072 0.747221 1.73237 0.841446L5.91238 5.97292C6.03967 6.12596 6.10925 6.31791 6.10925 6.51601C6.10925 6.7141 6.03967 6.90606 5.91238 7.05909L1.58525 12.1906C1.49843 12.2941 1.38815 12.3759 1.26335 12.4294C1.13854 12.4829 1.00274 12.5065 0.866949 12.4985Z"
+      fill="#333333"
+    />
+  </Svg>
+);
 
 export default function OrderCard({
   type,
@@ -33,16 +49,16 @@ export default function OrderCard({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.typeSection}>
-          <Ionicons 
-            name={isShopDeliver ? "bag-outline" : "bicycle-outline"} 
-            size={24} 
-            color="#0085FF" 
-          />
+          {isShopDeliver ? (
+            <ShoppingBagIconSVG width={25} height={25} color="#0085FF" />
+          ) : (
+            <DeliveryTruckIconSVG width={24} height={24} color="#0085FF" />
+          )}
           <Text style={styles.typeText}>
             {isShopDeliver ? 'Shop and Deliver' : 'Deliver'}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={12} color="#333" />
+        <ChevronIcon />
       </View>
 
       <View style={styles.divider} />
@@ -58,15 +74,15 @@ export default function OrderCard({
         
         <View style={styles.metaInfo}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={12} color="#7C7B7B" />
+            <ClockIconSVG width={12} height={12} color="#7C7B7B" />
             <Text style={styles.metaText}>{time}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="calendar-outline" size={12} color="#7C7B7B" />
+            <CalendarIconSVG width={12} height={12} color="#7C7B7B" />
             <Text style={styles.metaText}>{date}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="cube-outline" size={12} color="#7C7B7B" />
+            <CartIconSVG width={12} height={12} color="#7C7B7B" />
             <Text style={styles.metaText}>{date}</Text>
           </View>
           <View style={styles.metaItem}>
@@ -106,7 +122,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
   typeSection: {
     flexDirection: 'row',

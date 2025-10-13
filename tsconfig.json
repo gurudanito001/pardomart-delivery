@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "module": "es2015",
     "moduleResolution": "bundler",
     "types": ["react", "react-native"],
     "baseUrl": ".",

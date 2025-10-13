@@ -21,6 +21,12 @@ declare module 'react-native-svg' {
   export const Ellipse: any;
   export const Circle: any;
   export const G: any;
+  export const Defs: any;
+  export const LinearGradient: any;
+  export const Stop: any;
+  export const Use: any;
+  export const Polygon: any;
+  export const Line: any;
   export default any;
 }
 
