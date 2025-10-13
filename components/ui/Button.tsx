@@ -1,9 +1,15 @@
-import React from 'react';
-import { Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { colors, borderRadius, shadows, typography } from '../../styles/theme';
+import React from "react";
+import {
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
+import { colors, borderRadius, shadows, typography } from "../../styles/theme";
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
-export type ButtonSize = 'small' | 'medium' | 'large';
+export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonSize = "small" | "medium" | "large";
 
 export interface ButtonProps {
   title: string;
@@ -18,21 +24,25 @@ export interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   fullWidth = true,
   style,
   textStyle,
 }) => {
   const variantStyle =
-    variant === 'primary'
+    variant === "primary"
       ? styles.primary
-      : variant === 'secondary'
+      : variant === "secondary"
       ? styles.secondary
       : styles.ghost;
 
   const sizeStyle =
-    size === 'large' ? styles.large : size === 'small' ? styles.small : styles.medium;
+    size === "large"
+      ? styles.large
+      : size === "small"
+      ? styles.small
+      : styles.medium;
 
   return (
     <TouchableOpacity
@@ -46,7 +56,13 @@ export const Button: React.FC<ButtonProps> = ({
       ]}
       activeOpacity={0.8}
     >
-      <Text style={[styles.text, variant === 'ghost' ? styles.textGhost : undefined, textStyle]}>
+      <Text
+        style={[
+          styles.text,
+          variant === "ghost" ? styles.textGhost : undefined,
+          textStyle,
+        ]}
+      >
         {title}
       </Text>
     </TouchableOpacity>
@@ -56,21 +72,21 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   base: {
     borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     ...shadows.md,
   },
   fullWidth: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   primary: {
     backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: '#EFEFEF',
+    backgroundColor: "#EFEFEF",
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -87,7 +103,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   text: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: typography.sizes.base,
     fontFamily: typography.families.accent,
     fontWeight: typography.weights.bold,
