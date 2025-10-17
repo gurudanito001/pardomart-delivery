@@ -17,6 +17,7 @@ export * from './HelpIconSVG';
 export * from './ProfileIconSVG';
 export * from './ShoppingBagIconSVG';
 export * from './DeliveryTruckIconSVG';
+export * from './DeliveryTruckFilledSVG';
 export * from './ClockIconSVG';
 export * from './CalendarIconSVG';
 export * from './CartIconSVG';

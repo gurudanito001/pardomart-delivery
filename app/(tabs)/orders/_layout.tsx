@@ -13,6 +13,7 @@ export default function OrdersLayout() {
       <Stack.Screen name="item-substitution" />
       <Stack.Screen name="success" />
       <Stack.Screen name="verify-order-code" />
+      <Stack.Screen name="delivery-verification" />
     </Stack>
   );
 }
