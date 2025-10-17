@@ -220,7 +220,15 @@ const SubstitutionCard = ({ item }: SubstitutionCardProps) => {
           <Image source={{ uri: item.image }} style={styles.itemImage} />
         </View>
         <View style={styles.itemDetails}>
-          <Text style={styles.originalItemName}>{item.name}</Text>
+          <Text
+            style={[
+              styles.originalItemName,
+              { color: isEdit ? "#484C52" : "#BBBBBB" },
+            ]}
+          >
+            {item.name}
+          </Text>
+
           <View style={styles.itemPriceRow}>
             <Text style={styles.originalItemPrice}>
               ${item.price.toFixed(2)}
@@ -414,7 +422,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: typography.families.secondary,
     fontWeight: typography.weights.normal,
-    color: "#BBBBBB",
     lineHeight: 16,
   },
   itemPriceRow: {

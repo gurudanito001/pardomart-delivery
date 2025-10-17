@@ -9,7 +9,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { MenuSVG, NotificationSVG, SupportSVG } from '../../../components/icons';
+import { MenuButton, NotificationSVG, SupportSVG } from '../../../components';
 import Svg, { Path, Rect, Ellipse } from 'react-native-svg';
 
 const ShoppingBagIcon = () => (
@@ -197,9 +197,7 @@ export default function OrderPreviewScreen() {
         {/* Header Icons */}
         <SafeAreaView style={styles.headerSafeArea}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.menuButton}>
-              <MenuSVG width={24} height={24} color="#000" />
-            </TouchableOpacity>
+            <MenuButton />
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.iconButton}>
                 <NotificationSVG width={22} height={22} color="#000" />

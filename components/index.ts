@@ -3,3 +3,8 @@ export * from './ui';
 export * from './icons';
 export { default as ThemedText } from './ThemedText';
 export { default as ThemedView } from './ThemedView';
+export { MenuButton } from './MenuButton';
+export { ProfileDrawer } from './ProfileDrawer';
+export { TransactionItem } from './TransactionItem';
+export type { Transaction } from './TransactionItem';
+export { HistoryCard } from './HistoryCard';

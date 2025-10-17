@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,10 +11,10 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import {
-  MenuSVG,
+  MenuButton,
   NotificationSVG,
   SupportSVG,
-} from "../../../components/icons";
+} from "@/components";
 import * as RNSVG from "react-native-svg";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -201,6 +202,7 @@ const SendIcon = () => (
 );
 
 export default function ArrivedStoreScreen() {
+
   const handleGoBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -252,9 +254,7 @@ export default function ArrivedStoreScreen() {
 
           <View style={styles.headerContainer}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.menuButton}>
-                <MenuSVG width={24} height={24} color="#000" />
-              </TouchableOpacity>
+              <MenuButton />
               <View style={styles.headerRight}>
                 <TouchableOpacity style={styles.iconButton}>
                   <NotificationSVG width={22} height={22} color="#000" />
@@ -444,21 +444,20 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "6.435deg" }],
   },
   endMarkerInner: {
-    width: 22,
-    height: 23,
+    width: 18,
+    height: 19,
     padding: 4.562,
     borderRadius: 23.948,
     backgroundColor: "#292662",
     position: "absolute",
-    left: 2,
-    top: 2,
+    left: -9,
+    top: 10,
     transform: [{ rotate: "-40.34deg" }],
   },
   sendIconWrapper: {
     position: "absolute",
-    top: 140,
-    left: 153,
-    transform: [{ rotate: "-119.125deg" }],
+    top: 13,
+    left: 28,
   },
   sendIcon: {
     width: 14,
@@ -467,11 +466,11 @@ const styles = StyleSheet.create({
   },
   originLabel: {
     position: "absolute",
-    top: 104,
+    top: 55,
     left: 89,
     backgroundColor: "#FFF",
     paddingHorizontal: 11.404,
-    paddingVertical: 11.404,
+    paddingVertical: 5,
     borderRadius: 33.071,
     borderWidth: 1,
     borderColor: "#F9F9F9",
@@ -484,11 +483,11 @@ const styles = StyleSheet.create({
   },
   destinationLabel: {
     position: "absolute",
-    top: 416,
-    left: 256,
+    top: 380,
+    left: 233,
     backgroundColor: "#FFF",
     paddingHorizontal: 11.404,
-    paddingVertical: 11.404,
+    paddingVertical: 5,
     borderRadius: 27.369,
     borderWidth: 1,
     borderColor: "#F9F9F9",
@@ -727,7 +726,6 @@ const styles = StyleSheet.create({
   },
   distanceSection: {
     gap: 7,
-    width: 68,
   },
   distanceLabel: {
     color: "#797979",

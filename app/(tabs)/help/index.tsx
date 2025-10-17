@@ -1,192 +1,287 @@
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from "react";
 import {
-  FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-
-const SUPPORT_OPTIONS = [
-  {
-    id: 'chat',
-    title: 'Live chat support',
-    description: 'Get instant help from the operations team during deliveries.',
-    icon: 'chatbubble-ellipses-outline' as const,
-  },
-  {
-    id: 'call',
-    title: 'Call dispatch',
-    description: 'Speak directly with dispatch when you need adjustments.',
-    icon: 'call-outline' as const,
-  },
-  {
-    id: 'safety',
-    title: 'Emergency safety line',
-    description: 'Reach help immediately for urgent safety situations.',
-    icon: 'shield-checkmark-outline' as const,
-  },
-];
-
-const FAQ_ENTRIES = [
-  {
-    id: 'payment-cycle',
-    question: 'When do I receive payouts?',
-    answer: 'Earnings are processed daily at 9:00 PM and arrive in your connected bank account before noon the following day.',
-  },
-  {
-    id: 'order-updates',
-    question: 'How do I update customers about substitutions?',
-    answer: 'Open the order, tap “Request substitution”, and choose an alternative. The customer receives an instant notification to approve or decline.',
-  },
-  {
-    id: 'bag-policy',
-    question: 'What is the shopping bag policy?',
-    answer: 'Always use insulated bags for frozen goods and attach itemized receipts. Expect random audits from store partners.',
-  },
-];
+  ScrollView,
+  Platform,
+} from "react-native";
+import { router } from "expo-router";
+import { NotificationSVG } from "@/components/icons/NotificationSVG";
+import { SupportSVG } from "@/components/icons/SupportSVG";
+import { DownArrowIconSVG } from "@/components/icons/DownArrowIconSVG";
+import { AttachmentIconSVG } from "@/components/icons/AttachmentIconSVG";
+import { ArrowBackSVG } from "@/components";
 
 export default function HelpScreen() {
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleAttachment = () => {
+    console.log("Attachment pressed");
+  };
+
+  const handleSend = () => {
+    console.log("Send pressed", { subject, topic, message });
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Support center</Text>
-        <Text style={styles.subtitle}>Everything you need to keep deliveries running smoothly.</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <ArrowBackSVG width={30} height={30} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Create Ticket</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.iconCircle}>
+              <NotificationSVG width={24} height={24} color="black" />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.iconCircle}>
+              <SupportSVG width={24} height={24} color="black" />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <FlatList
-        data={SUPPORT_OPTIONS}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.supportCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name={item.icon} size={20} color="#06888C" />
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.helpSection}>
+          <Text style={styles.helpTitle}>We are here to help</Text>
+          <Text style={styles.helpSubtitle}>
+            We have an active team standing by to answer you
+          </Text>
+        </View>
+
+        <View style={styles.formSection}>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Subject</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter subject"
+                placeholderTextColor="#7C8BA0"
+                value={subject}
+                onChangeText={setSubject}
+              />
             </View>
-            <View style={styles.supportDetails}>
-              <Text style={styles.supportTitle}>{item.title}</Text>
-              <Text style={styles.supportDescription}>{item.description}</Text>
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Topic</Text>
+            <TouchableOpacity style={styles.inputContainer}>
+              <Text style={[styles.input, styles.selectText]}>
+                {topic || "select"}
+              </Text>
+              <DownArrowIconSVG width={16} height={16} color="black" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Message</Text>
+            <View style={[styles.inputContainer, styles.messageContainer]}>
+              <TextInput
+                style={[styles.input, styles.messageInput]}
+                placeholder="Add your message here..."
+                placeholderTextColor="#7C8BA0"
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                textAlignVertical="top"
+              />
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#A0AEC0" />
+          </View>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.attachmentButton}
+            onPress={handleAttachment}
+          >
+            <AttachmentIconSVG width={24} height={24} color="black" />
+            <Text style={styles.attachmentText}>Attachment</Text>
           </TouchableOpacity>
-        )}
-        ListHeaderComponent={
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Contact operations</Text>
-          </View>
-        }
-        ListFooterComponent={
-          <View style={styles.faqSection}>
-            <Text style={styles.sectionTitle}>Guides and answers</Text>
-            {FAQ_ENTRIES.map((faq) => (
-              <View key={faq.id} style={styles.faqCard}>
-                <Text style={styles.faqQuestion}>{faq.question}</Text>
-                <Text style={styles.faqAnswer}>{faq.answer}</Text>
-              </View>
-            ))}
-          </View>
-        }
-      />
-    </SafeAreaView>
+
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+            <Text style={styles.sendText}>Send</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 24,
-    backgroundColor: '#F1FBFB',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === "ios" ? 64 : 14,
+    paddingBottom: 14,
+    height: Platform.OS === "ios" ? 104 : 64,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0F172A',
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
+  backButton: {
+    width: 30,
+    height: 30,
   },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  sectionHeader: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
+  headerTitle: {
+    fontFamily: "Raleway",
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontWeight: "700",
+    color: "#000000",
   },
-  supportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 0,
   },
-  iconContainer: {
+  iconButton: {
+    padding: 0,
+  },
+  iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: '#E8F5F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  supportDetails: {
+  content: {
     flex: 1,
+    paddingHorizontal: 27,
   },
-  supportTitle: {
+  helpSection: {
+    marginTop: 9,
+    marginBottom: 33,
+  },
+  helpTitle: {
+    fontFamily: "Raleway",
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 7,
   },
-  supportDescription: {
-    marginTop: 4,
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
+  helpSubtitle: {
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#484C52",
   },
-  faqSection: {
-    marginTop: 32,
+  formSection: {
     gap: 16,
+    marginBottom: 33,
   },
-  faqCard: {
-    padding: 18,
+  fieldContainer: {
+    gap: 10,
+  },
+  label: {
+    fontFamily: "Open Sans",
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#000000",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FBFC',
+    borderColor: "#B4BED4",
+    backgroundColor: "#FFFFFF",
   },
-  faqQuestion: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 6,
+  input: {
+    flex: 1,
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#000000",
+    padding: 0,
   },
-  faqAnswer: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4B5563',
-    lineHeight: 20,
+  selectText: {
+    color: "#7C8BA0",
+  },
+  messageContainer: {
+    height: 159,
+    alignItems: "flex-start",
+  },
+  messageInput: {
+    height: "100%",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    marginBottom: 40,
+  },
+  attachmentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#000000",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
+    flex: 1,
+  },
+  attachmentText: {
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000000",
+    lineHeight: 25,
+  },
+  sendButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#0085FF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
+    flex: 1,
+  },
+  sendText: {
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    lineHeight: 25,
   },
 });

@@ -11,10 +11,10 @@ import { useRouter } from 'expo-router';
 import {
   NotificationSVG,
   SupportSVG,
-  MenuSVG,
   CloseSVG,
   DoubleArrowSVG,
-  LocationPermissionModal
+  LocationPermissionModal,
+  MenuButton
 } from '../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -58,9 +58,7 @@ export default function GoOnlinePage() {
       {/* Header with Menu and Icons */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.menuButton}>
-            <MenuSVG width={24} height={24} color="#000" />
-          </TouchableOpacity>
+          <MenuButton />
 
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton}>

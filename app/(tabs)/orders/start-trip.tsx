@@ -13,13 +13,13 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import {
-  MenuSVG,
+  MenuButton,
   NotificationSVG,
   SupportSVG,
   NavigationRouteSVG,
   RouteStartMarker,
   RouteEndMarker,
-} from '../../../components/icons';
+} from '../../../components';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -205,9 +205,7 @@ export default function StartTripScreen() {
 
           <SafeAreaView style={styles.headerSafeArea}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.menuButton}>
-                <MenuSVG width={24} height={24} color="#000" />
-              </TouchableOpacity>
+              <MenuButton />
               <View style={styles.headerRight}>
                 <TouchableOpacity style={styles.iconButton}>
                   <NotificationSVG width={22} height={22} color="#000" />

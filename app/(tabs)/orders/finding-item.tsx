@@ -1,303 +1,371 @@
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
   Image,
-  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-
-interface ProductItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  description: string;
-}
-
-const MOCK_PRODUCT: ProductItem = {
-  id: '1',
-  name: 'Valbest fully cooked chicken nugget',
-  price: 3880,
-  quantity: 2,
-  image: 'https://api.builder.io/api/v1/image/assets/TEMP/8ca46a868ac10a74a0da8c30074c452c3ddf4ae8?width=114',
-  description:
-    'Frozen chicken nuggets with 9g protein per serving. 24 oz family pack, stocked in aisle 6 freezer.',
-};
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowBackSVG } from "@/components/icons/ArrowBackSVG";
+import { NotificationSVG } from "@/components/icons/NotificationSVG";
+import { SupportSVG } from "@/components/icons/SupportSVG";
 
 export default function FindingItemScreen() {
-  const [foundQuantity, setFoundQuantity] = useState('2');
+  const [quantity, setQuantity] = useState("2");
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
       router.back();
-      return;
+    } else {
+      router.push("/(tabs)/orders");
     }
+  };
 
-    router.push('/(tabs)/orders');
+  const handleCancel = () => {
+    handleGoBack();
   };
 
   const handleConfirm = () => {
-    router.push('/(tabs)/orders/finding-items');
+    router.push("/(tabs)/orders/finding-items");
   };
 
   const handleAddSubstitute = () => {
-    router.push('/(tabs)/orders/item-substitution');
+    router.push("/(tabs)/orders/item-substitution");
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBackground} />
-      <SafeAreaView>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.roundButton} onPress={handleGoBack}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <ArrowBackSVG width={30} height={30} color="#000000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Finding item</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.roundButton} onPress={() => router.push('/(tabs)/inbox')}>
-              <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.roundButton} onPress={() => router.push('/(tabs)/help')}>
-              <Ionicons name="help-buoy-outline" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.headerTitle}>Scan Item</Text>
         </View>
-      </SafeAreaView>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.iconCircle}>
+              <NotificationSVG width={24} height={24} color="#000000" />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.iconCircle}>
+              <SupportSVG width={24} height={24} color="#000000" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <View style={styles.contentSection}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.searchResultHeader}>
-          <Text style={styles.searchResultText}>Search result (1)</Text>
+          <Text style={styles.searchResultText}>Search Result (1)</Text>
         </View>
 
         <View style={styles.productCard}>
-          <View style={styles.productImageContainer}>
-            <Image source={{ uri: MOCK_PRODUCT.image }} style={styles.productImage} />
-          </View>
-          <View style={styles.productDetails}>
-            <Text style={styles.productName}>{MOCK_PRODUCT.name}</Text>
-            <Text style={styles.productDescription}>{MOCK_PRODUCT.description}</Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.price}>{`₦${MOCK_PRODUCT.price.toFixed(2)}`}</Text>
-              <Text style={styles.quantityLabel}>(qty {MOCK_PRODUCT.quantity})</Text>
+          <View style={styles.productContent}>
+            <View style={styles.productImageContainer}>
+              <Image
+                source={{
+                  uri: "https://api.builder.io/api/v1/image/assets/TEMP/8ca46a868ac10a74a0da8c30074c452c3ddf4ae8?width=114",
+                }}
+                style={styles.productImage}
+              />
+            </View>
+            <View style={styles.productDetails}>
+              <Text style={styles.productDescription}>
+                Valbest fully cooked chicken Nugget- frozen, 9g protein per 4
+                nugget serving, 24 0z (1.5lb)
+              </Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.price}>$3.88</Text>
+                <Text style={styles.quantity}>(qty 2)</Text>
+              </View>
             </View>
           </View>
         </View>
 
         <View style={styles.quantitySection}>
-          <Text style={styles.quantityQuestion}>How many did you find?</Text>
-          <View style={styles.quantityInputContainer}>
+          <Text style={styles.quantityLabel}>How many did you find?</Text>
+          <View style={styles.inputContainer}>
+            <View style={styles.cursorLine} />
             <TextInput
-              style={styles.quantityInput}
-              value={foundQuantity}
-              onChangeText={setFoundQuantity}
+              style={styles.input}
+              value={quantity}
+              onChangeText={setQuantity}
               keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#9CA3AF"
+              placeholder="2"
+              placeholderTextColor="#969BA0"
             />
-            <View style={styles.quantityDivider} />
-            <Text style={styles.quantityLabel}>out of {MOCK_PRODUCT.quantity}</Text>
+            <View style={styles.inputDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.outOfText}>out of 2</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.cancelButton} onPress={handleGoBack}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-            <Text style={styles.confirmButtonText}>Confirm</Text>
+        <View style={styles.buttonsSection}>
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={handleAddSubstitute}>
+            <Text style={styles.substituteText}>
+              Can't find a product?{" "}
+              <Text style={styles.substituteLink}>Add a substitute</Text>
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity onPress={handleAddSubstitute}>
-          <Text style={styles.substituteText}>
-            Can&apos;t find this product? <Text style={styles.substituteLink}>Add a substitute</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 160,
-    backgroundColor: '#06888C',
+    backgroundColor: "#FFFFFF",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    paddingTop: 14,
+    paddingBottom: 14,
   },
-  roundButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
-  contentSection: {
+  backButton: {
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontFamily: "Raleway",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000000",
+    lineHeight: 22,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 24,
   },
   searchResultHeader: {
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderColor: '#E5E7EB',
+    borderBottomColor: "#D9D9D9",
+    marginBottom: 23,
   },
   searchResultText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#898A8D",
   },
   productCard: {
-    flexDirection: 'row',
-    gap: 16,
-    padding: 16,
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: "#B4BED4",
+    borderRadius: 16,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 1,
+    marginBottom: 10,
+  },
+  productContent: {
+    flexDirection: "row",
+    gap: 21,
   },
   productImageContainer: {
-    width: 96,
-    height: 96,
+    width: 81,
+    height: 76,
     borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    justifyContent: "center",
+    alignItems: "center",
   },
   productImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: 57,
+    height: 57,
   },
   productDetails: {
     flex: 1,
-    gap: 10,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    gap: 6,
   },
   productDescription: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4B5563',
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#484C52",
+    lineHeight: 16,
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   price: {
+    fontFamily: "Open Sans",
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#000000",
   },
-  quantityLabel: {
+  quantity: {
+    fontFamily: "Open Sans",
     fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: "400",
+    color: "#898A8D",
   },
   quantitySection: {
-    gap: 12,
+    gap: 14,
+    marginBottom: 29,
   },
-  quantityQuestion: {
+  quantityLabel: {
+    fontFamily: "Raleway",
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#101010",
   },
-  quantityInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  inputContainer: {
+    height: 50,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
+    borderColor: "#B4BED4",
+    backgroundColor: "#F9F9F9",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
   },
-  quantityInput: {
+  cursorLine: {
+    width: 2,
+    height: 26,
+    backgroundColor: "#2D9CDB",
+    position: "absolute",
+    left: 18,
+  },
+  input: {
     flex: 1,
-    height: 50,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: "Nunito Sans",
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#969BA0",
+    paddingLeft: 2,
   },
-  quantityDivider: {
+  inputDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  dividerLine: {
     width: 1,
     height: 28,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 12,
+    backgroundColor: "#D9D9D9",
   },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
+  outOfText: {
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#979797",
+    lineHeight: 25,
+  },
+  buttonsSection: {
+    gap: 29,
+  },
+  buttonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 18,
   },
   cancelButton: {
     flex: 1,
-    height: 52,
+    paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#0085FF",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 1,
   },
   cancelButtonText: {
+    fontFamily: "Raleway",
     fontSize: 16,
-    fontWeight: '700',
-    color: '#4B5563',
+    fontWeight: "700",
+    color: "#0085FF",
+    lineHeight: 25,
   },
   confirmButton: {
     flex: 1,
-    height: 52,
+    paddingVertical: 14,
     borderRadius: 16,
-    backgroundColor: '#06888C',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#0085FF",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 1,
   },
   confirmButtonText: {
+    fontFamily: "Raleway",
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
+    lineHeight: 25,
   },
   substituteText: {
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#000000",
+    textAlign: "center",
+    lineHeight: 25,
   },
   substituteLink: {
-    color: '#06888C',
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FF0000",
   },
 });
