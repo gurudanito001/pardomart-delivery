@@ -42,3 +42,5 @@ export * from './EyeIconSVG';
 export * from './AttachmentIconSVG';
 export * from './RefreshIconSVG';
 export * from './FilterIconSVG';
+export * from './SubmitFilledSVG';
+export * from './ReturnRequestSVG';

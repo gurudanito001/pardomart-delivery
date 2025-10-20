@@ -15,8 +15,15 @@ import { ExclamationIconSVG } from "@/components/icons/ExclamationIconSVG";
 import { NavigationArrowSVG } from "@/components/icons/NavigationArrowSVG";
 import { NotificationSVG } from "@/components/icons/NotificationSVG";
 import { SupportSVG } from "@/components/icons/SupportSVG";
-import { MenuButton } from '@/components';
-import Svg, { Path } from "react-native-svg";
+import { MenuButton } from "@/components";
+import Svg, {
+  Path,
+  Circle,
+  Rect,
+  Defs,
+  LinearGradient,
+  Stop,
+} from "react-native-svg";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -52,6 +59,61 @@ export default function LocationCheckScreen() {
     router.push("/(tabs)/help");
   };
 
+  const RouteOverlay = () => (
+    <View style={styles.routeOverlay}>
+      <View style={styles.startLocationLabel}>
+        <Text style={styles.locationLabelText}>Bellaire Town</Text>
+      </View>
+
+      <View style={styles.startLocationMarker}>
+        <View style={styles.outerCircle}>
+          <View style={styles.middleCircle}>
+            <View style={styles.innerCircleWhite}>
+              <View style={styles.innerCircleOrange} />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <Svg
+        width={179}
+        height={276}
+        viewBox="0 0 179 276"
+        fill="none"
+        style={styles.routePath}
+      >
+        <Defs>
+          <LinearGradient
+            id="gradient"
+            x1="0.726153"
+            y1="-41.9718"
+            x2="119.343"
+            y2="199.91"
+            gradientUnits="userSpaceOnUse"
+          >
+            <Stop offset="0.18937" stopColor="#FFB169" />
+            <Stop offset="1" stopColor="#000000" stopOpacity="0" />
+          </LinearGradient>
+        </Defs>
+        <Path
+          d="M164.488 274.125L174.682 203.512C179.623 169.287 174.298 134.366 159.381 103.169C134.591 51.3223 85.8923 14.9799 29.1348 5.96935L2.45703 1.73412"
+          stroke="url(#gradient)"
+          strokeWidth="3.42118"
+          strokeLinecap="round"
+          strokeDasharray="6.84 6.84"
+        />
+      </Svg>
+
+      <View style={styles.endLocationMarker}>
+        <View style={styles.endMarkerInner} />
+      </View>
+
+      <View style={styles.endLocationLabel}>
+        <Text style={styles.locationLabelText}>Wes Town</Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Image
@@ -62,7 +124,9 @@ export default function LocationCheckScreen() {
         resizeMode="cover"
       />
 
-      <View style={styles.topBar}>
+      <RouteOverlay />
+
+      <View style={[styles.topBar, { top: insets.top + 14 }]}>
         <MenuButton />
 
         <View style={styles.topBarActions}>
@@ -165,28 +229,127 @@ const styles = StyleSheet.create({
     height: "100%",
     zIndex: 1,
   },
+  routeOverlay: {
+    position: "absolute",
+    top: 104,
+    left: 89,
+    width: 247,
+    height: 336,
+    zIndex: 5,
+  },
+  startLocationLabel: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    paddingHorizontal: 11.404,
+    paddingVertical: 6,
+    borderRadius: 33.071,
+    borderWidth: 1,
+    borderColor: "#F9F9F9",
+    backgroundColor: "#FFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2.281 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6.842,
+    elevation: 2,
+    transform: [{ rotate: "3.5deg" }],
+  },
+  locationLabelText: {
+    color: "#454545",
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    fontWeight: "400",
+    letterSpacing: 0.376,
+  },
+  startLocationMarker: {
+    position: "absolute",
+    top: 14,
+    left: 15,
+    width: 46,
+    height: 46,
+    transform: [{ rotate: "3.5deg" }],
+  },
+  outerCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 39,
+    backgroundColor: "rgba(255, 210, 170, 0.20)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  middleCircle: {
+    padding: 8.394,
+    borderRadius: 20.986,
+    backgroundColor: "rgba(254, 185, 122, 0.40)",
+  },
+  innerCircleWhite: {
+    width: 18,
+    height: 18,
+    borderRadius: 20.986,
+    backgroundColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  innerCircleOrange: {
+    width: 10,
+    height: 10,
+    borderRadius: 8.39449,
+    backgroundColor: "#FEB97A",
+  },
+  routePath: {
+    position: "absolute",
+    top: 24,
+    left: 26,
+  },
+  endLocationMarker: {
+    position: "absolute",
+    bottom: 40,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1.14 },
+    shadowOpacity: 0.1,
+    shadowRadius: 13.685,
+    elevation: 2,
+    transform: [{ rotate: "6.435deg" }],
+  },
+  endMarkerInner: {
+    width: 22,
+    height: 23,
+    borderRadius: 23.948,
+    backgroundColor: "#292662",
+    transform: [{ rotate: "-40.34deg" }],
+  },
+  endLocationLabel: {
+    position: "absolute",
+    bottom: 24,
+    right: -22,
+    paddingHorizontal: 11.404,
+    paddingVertical: 6,
+    borderRadius: 27.369,
+    borderWidth: 1,
+    borderColor: "#F9F9F9",
+    backgroundColor: "#FFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2.281 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6.842,
+    elevation: 2,
+    transform: [{ rotate: "3.5deg" }],
+  },
   topBar: {
     position: "absolute",
-    top: 20,
     left: 21,
     right: 21,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     zIndex: 20,
-  },
-  menuButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 30,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    elevation: 2,
   },
   topBarActions: {
     flexDirection: "row",
@@ -211,7 +374,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: "55%",
+    height: 400,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     backgroundColor: "#FFF",
@@ -236,12 +399,11 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   contentContainer: {
-    gap: 26,
+    gap: 21,
   },
   errorSection: {
     alignItems: "center",
     gap: 26,
-    paddingBottom: 20,
   },
   messageContainer: {
     alignItems: "center",
@@ -253,6 +415,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#C43D28",
     textAlign: "center",
+    lineHeight: 34,
   },
   questionText: {
     fontFamily: "Raleway",
@@ -260,6 +423,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
     textAlign: "center",
+    lineHeight: 34,
   },
   warningContainer: {
     flexDirection: "row",
@@ -298,7 +462,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "400",
     color: "#898A8D",
-    lineHeight: 16,
   },
   buttonsContainer: {
     gap: 17,
@@ -310,6 +473,7 @@ const styles = StyleSheet.create({
     gap: 20,
     height: 53,
     paddingHorizontal: 30,
+    paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#000",
@@ -326,15 +490,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
     textAlign: "center",
+    lineHeight: 25,
   },
   goBackButton: {
-    display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     height: 55,
-    paddingHorizontal: 30,
+    paddingHorizontal: 120,
     paddingVertical: 14,
     borderRadius: 16,
     backgroundColor: "#0085FF",
@@ -350,5 +514,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFF",
     textAlign: "center",
+    lineHeight: 25,
   },
 });

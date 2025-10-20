@@ -1,4 +1,5 @@
 export { default as LocationPermissionModal } from './LocationPermissionModal';
+export { default as NavigationMapModal } from './NavigationMapModal';
 export * from './ui';
 export * from './icons';
 export { default as ThemedText } from './ThemedText';
