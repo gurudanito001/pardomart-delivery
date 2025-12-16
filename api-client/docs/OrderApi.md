@@ -206,7 +206,7 @@ const { status, data } = await apiInstance.orderAdminOrderIdMessagesGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderAdminOrderIdPatch**
-> orderAdminOrderIdPatch(updateOrderPayload)
+> orderAdminOrderIdPatch(updateOrderPayload, )
 
 Allows an admin to update specific fields of an order to resolve issues or \"un-stuck\" it. Fields that can be updated include `orderStatus`, `paymentStatus`, `shopperId`, `deliveryPersonId`, etc. **Warning**: Changing `orderStatus` to `delivered` will trigger payout logic. 
 
@@ -222,12 +222,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let orderId: string; //The ID of the order to update. (default to undefined)
 let updateOrderPayload: UpdateOrderPayload; //
+let orderId: string; //The ID of the order to update. (default to undefined)
 
 const { status, data } = await apiInstance.orderAdminOrderIdPatch(
-    orderId,
-    updateOrderPayload
+    updateOrderPayload,
+    orderId
 );
 ```
 
@@ -414,7 +414,7 @@ const { status, data } = await apiInstance.orderIdGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderIdPatch**
-> Order orderIdPatch(updateOrderPayload)
+> Order orderIdPatch(updateOrderPayload, )
 
 
 ### Example
@@ -429,12 +429,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let id: string; //The ID of the order to update. (default to undefined)
 let updateOrderPayload: UpdateOrderPayload; //
+let id: string; //The ID of the order to update. (default to undefined)
 
 const { status, data } = await apiInstance.orderIdPatch(
-    id,
-    updateOrderPayload
+    updateOrderPayload,
+    id
 );
 ```
 
@@ -469,7 +469,7 @@ const { status, data } = await apiInstance.orderIdPatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderIdStatusPatch**
-> Order orderIdStatusPatch(updateOrderStatusPayload)
+> Order orderIdStatusPatch(updateOrderStatusPayload, )
 
 
 ### Example
@@ -484,12 +484,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let id: string; //The ID of the order to update. (default to undefined)
 let updateOrderStatusPayload: UpdateOrderStatusPayload; //
+let id: string; //The ID of the order to update. (default to undefined)
 
 const { status, data } = await apiInstance.orderIdStatusPatch(
-    id,
-    updateOrderStatusPayload
+    updateOrderStatusPayload,
+    id
 );
 ```
 
@@ -524,7 +524,7 @@ const { status, data } = await apiInstance.orderIdStatusPatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderIdVerifyPickupPost**
-> orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest)
+> orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest, )
 
 Allows a vendor or their staff to verify an order for pickup by providing a 6-digit OTP. Upon successful verification, the order status is automatically transitioned. - If `deliveryMethod` is `customer_pickup`, status changes from `ready_for_pickup` to `picked_up_by_customer`. - If `deliveryMethod` is `delivery_person`, status changes from `ready_for_delivery` to `en_route`. 
 
@@ -540,12 +540,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let id: string; //The ID of the order to verify. (default to undefined)
 let orderIdVerifyPickupPostRequest: OrderIdVerifyPickupPostRequest; //
+let id: string; //The ID of the order to verify. (default to undefined)
 
 const { status, data } = await apiInstance.orderIdVerifyPickupPost(
-    id,
-    orderIdVerifyPickupPostRequest
+    orderIdVerifyPickupPostRequest,
+    id
 );
 ```
 
@@ -688,7 +688,7 @@ const { status, data } = await apiInstance.orderOrderIdDeclinePatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdItemsItemIdRespondToReplacementPatch**
-> OrderItemWithRelations orderOrderIdItemsItemIdRespondToReplacementPatch(respondToReplacementPayload)
+> OrderItemWithRelations orderOrderIdItemsItemIdRespondToReplacementPatch(respondToReplacementPayload, )
 
 Allows a customer to approve or reject a replacement suggested by the shopper.
 
@@ -704,14 +704,14 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
+let respondToReplacementPayload: RespondToReplacementPayload; //
 let orderId: string; // (default to undefined)
 let itemId: string; // (default to undefined)
-let respondToReplacementPayload: RespondToReplacementPayload; //
 
 const { status, data } = await apiInstance.orderOrderIdItemsItemIdRespondToReplacementPatch(
+    respondToReplacementPayload,
     orderId,
-    itemId,
-    respondToReplacementPayload
+    itemId
 );
 ```
 
@@ -749,7 +749,7 @@ const { status, data } = await apiInstance.orderOrderIdItemsItemIdRespondToRepla
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdItemsItemIdUpdateShoppingStatusPatch**
-> OrderItemWithRelations orderOrderIdItemsItemIdUpdateShoppingStatusPatch(updateOrderItemShoppingStatusPayload)
+> OrderItemWithRelations orderOrderIdItemsItemIdUpdateShoppingStatusPatch(updateOrderItemShoppingStatusPayload, )
 
 Allows the assigned shopper or delivery person to update an item\'s status during shopping (e.g., found, not found, suggest replacement).
 
@@ -765,14 +765,14 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
+let updateOrderItemShoppingStatusPayload: UpdateOrderItemShoppingStatusPayload; //
 let orderId: string; // (default to undefined)
 let itemId: string; // (default to undefined)
-let updateOrderItemShoppingStatusPayload: UpdateOrderItemShoppingStatusPayload; //
 
 const { status, data } = await apiInstance.orderOrderIdItemsItemIdUpdateShoppingStatusPatch(
+    updateOrderItemShoppingStatusPayload,
     orderId,
-    itemId,
-    updateOrderItemShoppingStatusPayload
+    itemId
 );
 ```
 
@@ -865,7 +865,7 @@ const { status, data } = await apiInstance.orderOrderIdMessagesGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdMessagesPost**
-> MessageWithRelations orderOrderIdMessagesPost(orderOrderIdMessagesPostRequest)
+> MessageWithRelations orderOrderIdMessagesPost(orderOrderIdMessagesPostRequest, )
 
 Sends a message from the authenticated user to another participant (customer, shopper, or delivery person) of the order.
 
@@ -881,12 +881,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let orderId: string; //The ID of the order. (default to undefined)
 let orderOrderIdMessagesPostRequest: OrderOrderIdMessagesPostRequest; //
+let orderId: string; //The ID of the order. (default to undefined)
 
 const { status, data } = await apiInstance.orderOrderIdMessagesPost(
-    orderId,
-    orderOrderIdMessagesPostRequest
+    orderOrderIdMessagesPostRequest,
+    orderId
 );
 ```
 
@@ -1031,7 +1031,7 @@ const { status, data } = await apiInstance.orderOrderIdStartShoppingPatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdTipPatch**
-> Order orderOrderIdTipPatch(updateTipPayload)
+> Order orderOrderIdTipPatch(updateTipPayload, )
 
 Allows a customer to add or update tips for the shopper and/or delivery person after an order has been placed. This will recalculate the order\'s total amount.
 
@@ -1047,12 +1047,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let orderId: string; //The ID of the order to add a tip to. (default to undefined)
 let updateTipPayload: UpdateTipPayload; //
+let orderId: string; //The ID of the order to add a tip to. (default to undefined)
 
 const { status, data } = await apiInstance.orderOrderIdTipPatch(
-    orderId,
-    updateTipPayload
+    updateTipPayload,
+    orderId
 );
 ```
 
@@ -1294,7 +1294,7 @@ const { status, data } = await apiInstance.orderVendorOrdersGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **ordersOrderIdDeliveryLocationPost**
-> DeliveryPersonLocation ordersOrderIdDeliveryLocationPost(ordersOrderIdDeliveryLocationPostRequest)
+> DeliveryPersonLocation ordersOrderIdDeliveryLocationPost(ordersOrderIdDeliveryLocationPostRequest, )
 
 Logs the current geographic coordinates of the delivery person for a specific order. This should be called periodically by the delivery person\'s application. Only the assigned delivery person for the order can post a location.
 
@@ -1310,12 +1310,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrderApi(configuration);
 
-let orderId: string; //The ID of the order being delivered. (default to undefined)
 let ordersOrderIdDeliveryLocationPostRequest: OrdersOrderIdDeliveryLocationPostRequest; //
+let orderId: string; //The ID of the order being delivered. (default to undefined)
 
 const { status, data } = await apiInstance.ordersOrderIdDeliveryLocationPost(
-    orderId,
-    ordersOrderIdDeliveryLocationPostRequest
+    ordersOrderIdDeliveryLocationPostRequest,
+    orderId
 );
 ```
 

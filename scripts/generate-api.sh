@@ -1,7 +1,12 @@
 #!/bin/bash
 
 # PardoMart API Client Generation Script (Unix/Linux/macOS)
-# This script generates a TypeScript Axios client from the OpenAPI specification
+# This script generates a TypeScript Axios API client from the OpenAPI specification.
+# Output structure (inside `api-client`):
+#   - `endpoints/`  : Axios API classes (e.g. AuthApi, ProductApi, EarningsApi)
+#   - `models/`     : TypeScript models/types (e.g. User, Product, Order)
+#   - `api.ts`      : Combined export surface (re-exporting endpoints & models)
+#   - `config.ts`   : Custom configuration (tokens, base URL) – preserved between runs
 
 echo "🚀 Generating PardoMart API Client..."
 

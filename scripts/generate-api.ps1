@@ -1,5 +1,10 @@
-# PardoMart API Client Generation Script
-# This script generates a TypeScript Axios client from the OpenAPI specification
+# PardoMart API Client Generation Script (Windows / PowerShell)
+# This script generates a TypeScript Axios API client from the OpenAPI specification.
+# Output structure (inside `api-client`):
+#   - `endpoints/`  : Axios API classes (e.g. AuthApi, ProductApi, EarningsApi)
+#   - `models/`     : TypeScript models/types (e.g. User, Product, Order)
+#   - `api.ts`      : Combined export surface (re-exporting endpoints & models)
+#   - `config.ts`   : Custom configuration (tokens, base URL) – preserved between runs
 
 Write-Host "Generating PardoMart API Client..." -ForegroundColor Green
 
@@ -41,7 +46,32 @@ npx @openapitools/openapi-generator-cli generate `
     -g typescript-axios `
     -o $OUTPUT_DIR `
     --skip-validate-spec `
-    --additional-properties=supportsES6=true
+    --additional-properties="supportsES6=true,withSeparateModelsAndApi=true,prependFormOrBodyParameters=true,legacyDiscriminatorBehavior=false,apiPackage=endpoints,modelPackage=models"
+
+# Post-process generated client to fix known issues
+Write-Host "Applying post-generation fixes..." -ForegroundColor Yellow
+
+$apiFile = Join-Path $OUTPUT_DIR "api.ts"
+if (Test-Path $apiFile) {
+    $content = Get-Content $apiFile -Raw
+
+    # Remove duplicate definitions of EarningsTotalGetPeriodEnum (keep the first one)
+    $pattern = "export const EarningsTotalGetPeriodEnum = {\s*Today: 'today',\s*_7days: '7days',\s*_1month: '1month',\s*_1year: '1year'\s*} as const;\s*export type EarningsTotalGetPeriodEnum = typeof EarningsTotalGetPeriodEnum\[keyof typeof EarningsTotalGetPeriodEnum];"
+    $regex = [regex]$pattern
+    $enumMatches = $regex.Matches($content)
+
+    if ($enumMatches.Count -gt 1) {
+        Write-Host "  Found $($enumMatches.Count) occurrences of EarningsTotalGetPeriodEnum, removing duplicates..." -ForegroundColor Gray
+        # Remove from the end to keep indices valid
+        for ($i = $enumMatches.Count - 1; $i -ge 1; $i--) {
+            $match = $enumMatches[$i]
+            $content = $content.Remove($match.Index, $match.Length)
+        }
+
+        Set-Content -Path $apiFile -Value $content -Encoding UTF8
+        Write-Host "  Duplicate EarningsTotalGetPeriodEnum definitions removed." -ForegroundColor Green
+    }
+}
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "API client generated successfully!" -ForegroundColor Green

@@ -115,7 +115,7 @@ const { status, data } = await apiInstance.deliveryAddressIdGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **deliveryAddressIdPut**
-> DeliveryAddress deliveryAddressIdPut(updateDeliveryAddressPayload)
+> DeliveryAddress deliveryAddressIdPut(updateDeliveryAddressPayload, )
 
 
 ### Example
@@ -130,12 +130,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DeliveryAddressApi(configuration);
 
-let id: string; //The ID of the delivery address to update. (default to undefined)
 let updateDeliveryAddressPayload: UpdateDeliveryAddressPayload; //
+let id: string; //The ID of the delivery address to update. (default to undefined)
 
 const { status, data } = await apiInstance.deliveryAddressIdPut(
-    id,
-    updateDeliveryAddressPayload
+    updateDeliveryAddressPayload,
+    id
 );
 ```
 

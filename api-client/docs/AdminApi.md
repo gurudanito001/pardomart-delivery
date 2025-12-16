@@ -230,7 +230,7 @@ const { status, data } = await apiInstance.adsPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **bugReportsIdStatusPatch**
-> bugReportsIdStatusPatch(bugReportsIdStatusPatchRequest)
+> bugReportsIdStatusPatch(bugReportsIdStatusPatchRequest, )
 
 
 ### Example
@@ -245,12 +245,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let id: string; //The ID of the bug report to update. (default to undefined)
 let bugReportsIdStatusPatchRequest: BugReportsIdStatusPatchRequest; //
+let id: string; //The ID of the bug report to update. (default to undefined)
 
 const { status, data } = await apiInstance.bugReportsIdStatusPatch(
-    id,
-    bugReportsIdStatusPatchRequest
+    bugReportsIdStatusPatchRequest,
+    id
 );
 ```
 
@@ -329,7 +329,7 @@ This endpoint does not have any parameters.
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **contentTypePatch**
-> Content contentTypePatch(updateContentPayload)
+> Content contentTypePatch(updateContentPayload, )
 
 Creates or updates the content for a given type. Requires admin privileges. The content should be an HTML string.
 
@@ -345,12 +345,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let type: ContentType; //The type of content to update. (default to undefined)
 let updateContentPayload: UpdateContentPayload; //
+let type: ContentType; //The type of content to update. (default to undefined)
 
 const { status, data } = await apiInstance.contentTypePatch(
-    type,
-    updateContentPayload
+    updateContentPayload,
+    type
 );
 ```
 
@@ -512,7 +512,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **customersAdminCustomerIdPatch**
-> customersAdminCustomerIdPatch(updateUserPayload)
+> customersAdminCustomerIdPatch(updateUserPayload, )
 
 Allows an admin to update a customer\'s profile details. This is primarily used to suspend or reactivate an account by setting the `active` field to `false` or `true`. Other fields like `name`, `email`, etc., can also be updated. 
 
@@ -528,12 +528,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let customerId: string; //The ID of the customer to update. (default to undefined)
 let updateUserPayload: UpdateUserPayload; //
+let customerId: string; //The ID of the customer to update. (default to undefined)
 
 const { status, data } = await apiInstance.customersAdminCustomerIdPatch(
-    customerId,
-    updateUserPayload
+    updateUserPayload,
+    customerId
 );
 ```
 
@@ -865,7 +865,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **deliveryPersonsAdminIdPatch**
-> deliveryPersonsAdminIdPatch(updateUserPayload)
+> deliveryPersonsAdminIdPatch(updateUserPayload, )
 
 Allows an admin to update a delivery person\'s profile details. This is primarily used to suspend or reactivate an account by setting the `active` field to `false` or `true`. Other fields like `name`, `email`, etc., can also be updated. 
 
@@ -881,12 +881,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let id: string; //The ID of the delivery person to update. (default to undefined)
 let updateUserPayload: UpdateUserPayload; //
+let id: string; //The ID of the delivery person to update. (default to undefined)
 
 const { status, data } = await apiInstance.deliveryPersonsAdminIdPatch(
-    id,
-    updateUserPayload
+    updateUserPayload,
+    id
 );
 ```
 
@@ -1096,7 +1096,7 @@ const { status, data } = await apiInstance.orderAdminOrderIdMessagesGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderAdminOrderIdPatch**
-> orderAdminOrderIdPatch(updateOrderPayload)
+> orderAdminOrderIdPatch(updateOrderPayload, )
 
 Allows an admin to update specific fields of an order to resolve issues or \"un-stuck\" it. Fields that can be updated include `orderStatus`, `paymentStatus`, `shopperId`, `deliveryPersonId`, etc. **Warning**: Changing `orderStatus` to `delivered` will trigger payout logic. 
 
@@ -1112,12 +1112,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let orderId: string; //The ID of the order to update. (default to undefined)
 let updateOrderPayload: UpdateOrderPayload; //
+let orderId: string; //The ID of the order to update. (default to undefined)
 
 const { status, data } = await apiInstance.orderAdminOrderIdPatch(
-    orderId,
-    updateOrderPayload
+    updateOrderPayload,
+    orderId
 );
 ```
 
@@ -1366,7 +1366,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **productIdStatusPatch**
-> productIdStatusPatch(productIdStatusPatchRequest)
+> productIdStatusPatch(productIdStatusPatchRequest, )
 
 Allows an admin to enable or disable a base product by setting its `isActive` flag.
 
@@ -1382,12 +1382,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let id: string; //The ID of the base product to update. (default to undefined)
 let productIdStatusPatchRequest: ProductIdStatusPatchRequest; //
+let id: string; //The ID of the base product to update. (default to undefined)
 
 const { status, data } = await apiInstance.productIdStatusPatch(
-    id,
-    productIdStatusPatchRequest
+    productIdStatusPatchRequest,
+    id
 );
 ```
 
@@ -1641,7 +1641,7 @@ const { status, data } = await apiInstance.supportTicketsGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **supportTicketsTicketIdStatusPatch**
-> SupportTicket supportTicketsTicketIdStatusPatch(updateSupportTicketStatusPayload)
+> SupportTicket supportTicketsTicketIdStatusPatch(updateSupportTicketStatusPayload, )
 
 Updates the status of a specific support ticket. Requires admin privileges.
 
@@ -1657,12 +1657,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AdminApi(configuration);
 
-let ticketId: string; // (default to undefined)
 let updateSupportTicketStatusPayload: UpdateSupportTicketStatusPayload; //
+let ticketId: string; // (default to undefined)
 
 const { status, data } = await apiInstance.supportTicketsTicketIdStatusPatch(
-    ticketId,
-    updateSupportTicketStatusPayload
+    updateSupportTicketStatusPayload,
+    ticketId
 );
 ```
 

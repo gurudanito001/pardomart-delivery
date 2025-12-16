@@ -21,6 +21,8 @@ import {
   NunitoSans_600SemiBold,
   NunitoSans_700Bold,
 } from '@expo-google-fonts/nunito-sans';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from '@/lib/toast';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -50,13 +52,17 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="auth" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="go-online" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      {/* AuthProvider will redirect to either auth or (tabs) depending on stored token */}
+      <AuthProvider>
+        <Stack initialRouteName="auth" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="go-online" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <Toaster position="top-center" />
+      </AuthProvider>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );

@@ -281,7 +281,7 @@ const { status, data } = await apiInstance.supportTicketsTicketIdGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **supportTicketsTicketIdStatusPatch**
-> SupportTicket supportTicketsTicketIdStatusPatch(updateSupportTicketStatusPayload)
+> SupportTicket supportTicketsTicketIdStatusPatch(updateSupportTicketStatusPayload, )
 
 Updates the status of a specific support ticket. Requires admin privileges.
 
@@ -297,12 +297,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new SupportApi(configuration);
 
-let ticketId: string; // (default to undefined)
 let updateSupportTicketStatusPayload: UpdateSupportTicketStatusPayload; //
+let ticketId: string; // (default to undefined)
 
 const { status, data } = await apiInstance.supportTicketsTicketIdStatusPatch(
-    ticketId,
-    updateSupportTicketStatusPayload
+    updateSupportTicketStatusPayload,
+    ticketId
 );
 ```
 

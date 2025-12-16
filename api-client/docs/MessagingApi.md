@@ -117,7 +117,7 @@ const { status, data } = await apiInstance.orderOrderIdMessagesGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdMessagesPost**
-> MessageWithRelations orderOrderIdMessagesPost(orderOrderIdMessagesPostRequest)
+> MessageWithRelations orderOrderIdMessagesPost(orderOrderIdMessagesPostRequest, )
 
 Sends a message from the authenticated user to another participant (customer, shopper, or delivery person) of the order.
 
@@ -133,12 +133,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new MessagingApi(configuration);
 
-let orderId: string; //The ID of the order. (default to undefined)
 let orderOrderIdMessagesPostRequest: OrderOrderIdMessagesPostRequest; //
+let orderId: string; //The ID of the order. (default to undefined)
 
 const { status, data } = await apiInstance.orderOrderIdMessagesPost(
-    orderId,
-    orderOrderIdMessagesPostRequest
+    orderOrderIdMessagesPostRequest,
+    orderId
 );
 ```
 

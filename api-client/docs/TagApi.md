@@ -216,7 +216,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tagsIdPatch**
-> Tag tagsIdPatch(updateTagPayload)
+> Tag tagsIdPatch(updateTagPayload, )
 
 
 ### Example
@@ -231,12 +231,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new TagApi(configuration);
 
-let id: string; //The ID of the tag to update. (default to undefined)
 let updateTagPayload: UpdateTagPayload; //
+let id: string; //The ID of the tag to update. (default to undefined)
 
 const { status, data } = await apiInstance.tagsIdPatch(
-    id,
-    updateTagPayload
+    updateTagPayload,
+    id
 );
 ```
 

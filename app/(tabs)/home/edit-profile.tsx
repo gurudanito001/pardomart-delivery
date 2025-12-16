@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -17,15 +18,45 @@ import {
   CameraIconSVG,
   DownArrowIconSVG,
 } from "@/components/icons";
+import profileService from "@/services/profile";
+import { toast } from "@/lib/toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function EditProfile() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
 
   const handleSaveChanges = () => {
     console.log("Save changes pressed");
   };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    profileService
+      .getProfile()
+      .then((profile) => {
+        if (!active) return;
+        setName(profile?.name ?? null);
+        setEmail(profile?.email ?? null);
+        setPhone(profile?.mobileNumber ?? null);
+      })
+      .catch((err) => {
+        console.error("Failed to load profile", err);
+        toast.error("Unable to load profile", {
+          description: err?.response?.data?.message ?? err?.message ?? "Please try again.",
+        });
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -50,6 +81,13 @@ export default function EditProfile() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" />
+            <Text style={styles.loadingText}>Loading profile...</Text>
+          </View>
+        ) : (
+          <>
         <View style={styles.profileImageContainer}>
           <Image
             source={{
@@ -66,7 +104,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Full Name</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>Kenedith George</Text>
+              <Text style={styles.inputText}>{name ?? "—"}</Text>
               <EditIconSVG width={20} height={20} color="#000" />
             </View>
           </View>
@@ -74,7 +112,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Email</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>Kennidthgeorge@gmail.com</Text>
+              <Text style={styles.inputText}>{email ?? "—"}</Text>
               <EditIconSVG width={20} height={20} color="#000" />
             </View>
           </View>
@@ -82,7 +120,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>+1 443 225 6678</Text>
+              <Text style={styles.inputText}>{phone ?? "—"}</Text>
               <EditIconSVG width={20} height={20} color="#000" />
             </View>
           </View>
@@ -96,7 +134,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Account name</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>Kennidthgeorge@gmail.com</Text>
+              <Text style={styles.inputText}>—</Text>
               <EditIconSVG width={20} height={20} color="#000" />
             </View>
           </View>
@@ -104,7 +142,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Account Number</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>1289765434</Text>
+              <Text style={styles.inputText}>—</Text>
               <EditIconSVG width={20} height={20} color="#000" />
             </View>
           </View>
@@ -112,7 +150,7 @@ export default function EditProfile() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Bank name</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputText}>Wellsfargo</Text>
+              <Text style={styles.inputText}>—</Text>
               <DownArrowIconSVG width={16} height={16} color="#000" />
             </View>
           </View>
@@ -126,6 +164,8 @@ export default function EditProfile() {
             <Text style={styles.saveButtonText}>Save changes</Text>
           </TouchableOpacity>
         </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -171,6 +211,16 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    gap: 10,
+  },
+  loadingText: {
+    fontFamily: "Open Sans",
+    fontSize: 14,
+    color: "#484C52",
   },
   profileImageContainer: {
     alignSelf: "center",

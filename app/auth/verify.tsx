@@ -1,6 +1,6 @@
 import { OTPInput } from '@/components/ui/OTPInput';
 import { AntDesign } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams, LocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   SafeAreaView,
@@ -9,18 +9,52 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
+import { toast } from '@/lib/toast';
+import auth from '@/services/auth';
 
 export default function VerifyScreen() {
-  const [otp, setOtp] = useState(['', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   // Key to force re-mount of OTPInput on resend for a better UX
   const [otpKey, setOtpKey] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const { mobileNumber } = useLocalSearchParams() as { mobileNumber?: string };
 
   const handleVerify = () => {
-    // You can add your verification logic here
-    // const code = otp.join('');
-    // console.log('Verifying OTP:', code);
-    router.push('/auth/upload-document');
+    const code = otp.join('');
+    if (!mobileNumber) {
+      toast.error('Missing phone number', {
+        description: 'No phone number provided. Please go back and try again.',
+      });
+      return;
+    }
+    if (code.length < 6) {
+      toast.error('Invalid code', {
+        description: 'Please enter the full verification code.',
+      });
+      return;
+    }
+
+    setLoading(true);
+    auth
+      .verifyLogin(mobileNumber, code)
+      .then(() => {
+        toast.success('Verification successful', {
+          description: 'You are now signed in.',
+        });
+        router.replace('/go-online');
+      })
+      .catch((err) => {
+        console.error('verifyLogin error', err);
+        const msg =
+          (err as any)?.response?.data?.message ??
+          (err as any)?.message ??
+          'Unable to verify code. Please try again.';
+        toast.error('Verification failed', { description: String(msg) });
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleBack = () => {
@@ -28,9 +62,31 @@ export default function VerifyScreen() {
   };
 
   const handleResend = () => {
+    if (!mobileNumber) {
+      toast.error('Missing phone number', {
+        description: 'No phone number provided. Please go back and try again.',
+      });
+      return;
+    }
     // Reset OTP inputs and force re-mount of OTPInput to focus the first field
-    setOtp(['', '', '', '', '']);
+    setOtp(['', '', '', '', '', '']);
     setOtpKey((prevKey) => prevKey + 1);
+
+    auth
+      .initiateLogin(mobileNumber)
+      .then(() => {
+        toast.success('Code resent', {
+          description: 'We sent you a new verification code.',
+        });
+      })
+      .catch((err) => {
+        console.error('resend code error', err);
+        const msg =
+          (err as any)?.response?.data?.message ??
+          (err as any)?.message ??
+          'Unable to resend code. Please try again.';
+        toast.error('Resend failed', { description: String(msg) });
+      });
   };
 
   return (
@@ -60,14 +116,14 @@ export default function VerifyScreen() {
         {/* OTP Input */}
         <OTPInput
           key={otpKey}
-          length={5}
+          length={6}
           value={otp}
           onChange={setOtp}
           style={styles.otpContainer}
         />
         {/* Verify Button */}
-        <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
-          <Text style={styles.verifyButtonText}>Verify</Text>
+        <TouchableOpacity style={styles.verifyButton} onPress={handleVerify} disabled={loading}>
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>Verify</Text>}
         </TouchableOpacity>
       </View>
 

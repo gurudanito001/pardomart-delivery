@@ -8,7 +8,7 @@ All URIs are relative to *http://localhost:5000/api/v1*
 |[**ordersOrderIdDeliveryPathGet**](#ordersorderiddeliverypathget) | **GET** /orders/{orderId}/delivery-path | Get the delivery path for an order|
 
 # **ordersOrderIdDeliveryLocationPost**
-> DeliveryPersonLocation ordersOrderIdDeliveryLocationPost(ordersOrderIdDeliveryLocationPostRequest)
+> DeliveryPersonLocation ordersOrderIdDeliveryLocationPost(ordersOrderIdDeliveryLocationPostRequest, )
 
 Logs the current geographic coordinates of the delivery person for a specific order. This should be called periodically by the delivery person\'s application. Only the assigned delivery person for the order can post a location.
 
@@ -24,12 +24,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DeliveryApi(configuration);
 
-let orderId: string; //The ID of the order being delivered. (default to undefined)
 let ordersOrderIdDeliveryLocationPostRequest: OrdersOrderIdDeliveryLocationPostRequest; //
+let orderId: string; //The ID of the order being delivered. (default to undefined)
 
 const { status, data } = await apiInstance.ordersOrderIdDeliveryLocationPost(
-    orderId,
-    ordersOrderIdDeliveryLocationPostRequest
+    ordersOrderIdDeliveryLocationPostRequest,
+    orderId
 );
 ```
 

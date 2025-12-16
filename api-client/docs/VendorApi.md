@@ -242,7 +242,7 @@ const { status, data } = await apiInstance.orderOrderIdDeclinePatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderOrderIdItemsItemIdUpdateShoppingStatusPatch**
-> OrderItemWithRelations orderOrderIdItemsItemIdUpdateShoppingStatusPatch(updateOrderItemShoppingStatusPayload)
+> OrderItemWithRelations orderOrderIdItemsItemIdUpdateShoppingStatusPatch(updateOrderItemShoppingStatusPayload, )
 
 Allows the assigned shopper or delivery person to update an item\'s status during shopping (e.g., found, not found, suggest replacement).
 
@@ -258,14 +258,14 @@ import {
 const configuration = new Configuration();
 const apiInstance = new VendorApi(configuration);
 
+let updateOrderItemShoppingStatusPayload: UpdateOrderItemShoppingStatusPayload; //
 let orderId: string; // (default to undefined)
 let itemId: string; // (default to undefined)
-let updateOrderItemShoppingStatusPayload: UpdateOrderItemShoppingStatusPayload; //
 
 const { status, data } = await apiInstance.orderOrderIdItemsItemIdUpdateShoppingStatusPatch(
+    updateOrderItemShoppingStatusPayload,
     orderId,
-    itemId,
-    updateOrderItemShoppingStatusPayload
+    itemId
 );
 ```
 
@@ -859,7 +859,7 @@ const { status, data } = await apiInstance.vendorsIdApprovePatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **vendorsIdAvailabilityPatch**
-> vendorsIdAvailabilityPatch(vendorsIdAvailabilityPatchRequest)
+> vendorsIdAvailabilityPatch(vendorsIdAvailabilityPatchRequest, )
 
 Marks a vendor\'s store as available or unavailable for shopping by setting `availableForShopping`. Only the user who owns the vendor can perform this action. 
 
@@ -875,12 +875,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new VendorApi(configuration);
 
-let id: string; //The ID of the vendor to update. (default to undefined)
 let vendorsIdAvailabilityPatchRequest: VendorsIdAvailabilityPatchRequest; //
+let id: string; //The ID of the vendor to update. (default to undefined)
 
 const { status, data } = await apiInstance.vendorsIdAvailabilityPatch(
-    id,
-    vendorsIdAvailabilityPatchRequest
+    vendorsIdAvailabilityPatchRequest,
+    id
 );
 ```
 
@@ -1026,7 +1026,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **vendorsIdPatch**
-> VendorWithRelations vendorsIdPatch(updateVendorPayload)
+> VendorWithRelations vendorsIdPatch(updateVendorPayload, )
 
 
 ### Example
@@ -1041,12 +1041,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new VendorApi(configuration);
 
-let id: string; //The ID of the vendor to update. (default to undefined)
 let updateVendorPayload: UpdateVendorPayload; //
+let id: string; //The ID of the vendor to update. (default to undefined)
 
 const { status, data } = await apiInstance.vendorsIdPatch(
-    id,
-    updateVendorPayload
+    updateVendorPayload,
+    id
 );
 ```
 

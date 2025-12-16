@@ -113,7 +113,7 @@ const { status, data } = await apiInstance.cartItemsIdGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **cartItemsIdPut**
-> CartItemWithProduct cartItemsIdPut(updateCartItemPayload)
+> CartItemWithProduct cartItemsIdPut(updateCartItemPayload, )
 
 
 ### Example
@@ -128,12 +128,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new CartItemApi(configuration);
 
-let id: string; //The ID of the cart item to update. (default to undefined)
 let updateCartItemPayload: UpdateCartItemPayload; //
+let id: string; //The ID of the cart item to update. (default to undefined)
 
 const { status, data } = await apiInstance.cartItemsIdPut(
-    id,
-    updateCartItemPayload
+    updateCartItemPayload,
+    id
 );
 ```
 

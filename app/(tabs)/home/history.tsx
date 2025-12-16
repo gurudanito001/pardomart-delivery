@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import {
@@ -15,47 +16,23 @@ import {
   FilterIconSVG,
 } from "@/components/icons";
 import { HistoryCard } from "@/components/HistoryCard";
-
-const HISTORY_DATA = [
-  {
-    id: "1",
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-    completedDate: "04/08/2025",
-  },
-  {
-    id: "2",
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-    completedDate: "04/08/2025",
-  },
-  {
-    id: "3",
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-    completedDate: "04/08/2025",
-  },
-  {
-    id: "4",
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-    completedDate: "04/08/2025",
-  },
-];
+import walletService from "@/services/wallet";
+import { toast } from "@/lib/toast";
 
 export default function HistoryScreen() {
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<
+    {
+      id: string;
+      total: string;
+      customerName: string;
+      time: string;
+      date: string;
+      units: string;
+      completedDate: string;
+    }[]
+  >([]);
+
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -63,6 +40,42 @@ export default function HistoryScreen() {
       router.push("/(tabs)/home");
     }
   };
+
+  const load = () => {
+    setLoading(true);
+    walletService
+      .getTransactions()
+      .then((txs) => {
+        const mapped =
+          (txs ?? []).map((t, idx) => {
+            const amount = Math.abs(t.amount ?? 0).toFixed(2);
+            const created = t.createdAt ? new Date(t.createdAt) : null;
+            const dateStr = created ? created.toLocaleDateString() : "—";
+            const timeStr = created ? created.toLocaleTimeString() : "—";
+            return {
+              id: t.id ?? String(idx),
+              total: `$${amount}`,
+              customerName: t.description ?? "Transaction",
+              time: timeStr,
+              date: dateStr,
+              units: t.type ? String(t.type) : "—",
+              completedDate: dateStr,
+            };
+          }) ?? [];
+        setTransactions(mapped);
+      })
+      .catch((err) => {
+        console.error("Failed to load history", err);
+        toast.error("Unable to load history", {
+          description: err?.response?.data?.message ?? err?.message ?? "Please try again.",
+        });
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -85,7 +98,7 @@ export default function HistoryScreen() {
       </View>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.refreshButton}>
+        <TouchableOpacity style={styles.refreshButton} onPress={load}>
           <Text style={styles.refreshText}>Refresh</Text>
           <RefreshIconSVG width={16} height={16} color="#484C52" />
         </TouchableOpacity>
@@ -101,27 +114,31 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.historyList}>
-          {HISTORY_DATA.map((item) => (
-            <HistoryCard
-              key={item.id}
-              total={item.total}
-              customerName={item.customerName}
-              time={item.time}
-              date={item.date}
-              units={item.units}
-              completedDate={item.completedDate}
-            />
-          ))}
-        </View>
-
-        <View style={styles.pagination}>
-          <Text style={styles.paginationText}>Showing 1-10 of 20</Text>
-          <TouchableOpacity style={styles.nextButton}>
-            <Text style={styles.nextText}>Next</Text>
-            <Text style={styles.nextArrow}>→</Text>
-          </TouchableOpacity>
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" />
+            <Text style={styles.loadingText}>Loading history...</Text>
+          </View>
+        ) : transactions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No history yet</Text>
+            <Text style={styles.emptySubtitle}>Completed orders and payouts will appear here.</Text>
+          </View>
+        ) : (
+          <View style={styles.historyList}>
+            {transactions.map((item) => (
+              <HistoryCard
+                key={item.id}
+                total={item.total}
+                customerName={item.customerName}
+                time={item.time}
+                date={item.date}
+                units={item.units}
+                completedDate={item.completedDate}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -210,37 +227,35 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  historyList: {
-    gap: 19,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  loadingContainer: {
+    paddingVertical: 40,
     alignItems: "center",
-    marginTop: 24,
-    height: 24,
+    gap: 10,
   },
-  paginationText: {
+  loadingText: {
     fontFamily: "Open Sans",
     fontSize: 14,
-    fontWeight: "700",
-    color: "#202224",
-    opacity: 0.8,
+    color: "#484C52",
   },
-  nextButton: {
-    flexDirection: "row",
+  emptyContainer: {
+    paddingVertical: 40,
     alignItems: "center",
-    gap: 5,
-    opacity: 0.8,
+    gap: 8,
   },
-  nextText: {
-    fontFamily: "Nunito Sans",
-    fontSize: 15,
-    fontWeight: "400",
+  emptyTitle: {
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#000",
   },
-  nextArrow: {
-    fontSize: 18,
-    color: "#000",
+  emptySubtitle: {
+    fontFamily: "Open Sans",
+    fontSize: 14,
+    color: "#484C52",
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  historyList: {
+    gap: 19,
   },
 });

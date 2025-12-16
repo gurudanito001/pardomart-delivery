@@ -196,7 +196,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **deliveryPersonsAdminIdPatch**
-> deliveryPersonsAdminIdPatch(updateUserPayload)
+> deliveryPersonsAdminIdPatch(updateUserPayload, )
 
 Allows an admin to update a delivery person\'s profile details. This is primarily used to suspend or reactivate an account by setting the `active` field to `false` or `true`. Other fields like `name`, `email`, etc., can also be updated. 
 
@@ -212,12 +212,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DeliveryPersonsApi(configuration);
 
-let id: string; //The ID of the delivery person to update. (default to undefined)
 let updateUserPayload: UpdateUserPayload; //
+let id: string; //The ID of the delivery person to update. (default to undefined)
 
 const { status, data } = await apiInstance.deliveryPersonsAdminIdPatch(
-    id,
-    updateUserPayload
+    updateUserPayload,
+    id
 );
 ```
 

@@ -235,7 +235,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **ratingsIdPatch**
-> Rating ratingsIdPatch(updateRatingPayload)
+> Rating ratingsIdPatch(updateRatingPayload, )
 
 Allows a customer to update their own rating for an order.
 
@@ -251,12 +251,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new RatingApi(configuration);
 
-let id: string; //The ID of the rating to update. (default to undefined)
 let updateRatingPayload: UpdateRatingPayload; //
+let id: string; //The ID of the rating to update. (default to undefined)
 
 const { status, data } = await apiInstance.ratingsIdPatch(
-    id,
-    updateRatingPayload
+    updateRatingPayload,
+    id
 );
 ```
 

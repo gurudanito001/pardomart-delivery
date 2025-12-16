@@ -333,7 +333,7 @@ const { status, data } = await apiInstance.usersIdGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **usersIdPut**
-> User usersIdPut(updateUserPayload)
+> User usersIdPut(updateUserPayload, )
 
 
 ### Example
@@ -348,12 +348,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new UserApi(configuration);
 
-let id: string; //The ID of the user to update. (default to undefined)
 let updateUserPayload: UpdateUserPayload; //
+let id: string; //The ID of the user to update. (default to undefined)
 
 const { status, data } = await apiInstance.usersIdPut(
-    id,
-    updateUserPayload
+    updateUserPayload,
+    id
 );
 ```
 

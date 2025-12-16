@@ -60,7 +60,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **contentTypePatch**
-> Content contentTypePatch(updateContentPayload)
+> Content contentTypePatch(updateContentPayload, )
 
 Creates or updates the content for a given type. Requires admin privileges. The content should be an HTML string.
 
@@ -76,12 +76,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let type: ContentType; //The type of content to update. (default to undefined)
 let updateContentPayload: UpdateContentPayload; //
+let type: ContentType; //The type of content to update. (default to undefined)
 
 const { status, data } = await apiInstance.contentTypePatch(
-    type,
-    updateContentPayload
+    updateContentPayload,
+    type
 );
 ```
 

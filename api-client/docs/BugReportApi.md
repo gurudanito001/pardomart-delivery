@@ -8,7 +8,7 @@ All URIs are relative to *http://localhost:5000/api/v1*
 |[**bugReportsPost**](#bugreportspost) | **POST** /bug-reports | Report a bug|
 
 # **bugReportsIdStatusPatch**
-> bugReportsIdStatusPatch(bugReportsIdStatusPatchRequest)
+> bugReportsIdStatusPatch(bugReportsIdStatusPatchRequest, )
 
 
 ### Example
@@ -23,12 +23,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new BugReportApi(configuration);
 
-let id: string; //The ID of the bug report to update. (default to undefined)
 let bugReportsIdStatusPatchRequest: BugReportsIdStatusPatchRequest; //
+let id: string; //The ID of the bug report to update. (default to undefined)
 
 const { status, data } = await apiInstance.bugReportsIdStatusPatch(
-    id,
-    bugReportsIdStatusPatchRequest
+    bugReportsIdStatusPatchRequest,
+    id
 );
 ```
 

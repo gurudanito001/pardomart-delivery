@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -17,89 +18,15 @@ import {
   EyeIconSVG,
 } from "@/components/icons";
 import { TransactionItem, Transaction } from "@/components/TransactionItem";
-
-const MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    type: "deposit",
-    name: "Jeremiah Johns",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-    avatar:
-      "https://api.builder.io/api/v1/image/assets/TEMP/222214b9aa6ad996b4688828592130754b6d86ee?width=72",
-  },
-  {
-    id: "2",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "3",
-    type: "deposit",
-    name: "Jeremiah Johns",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-    avatar:
-      "https://api.builder.io/api/v1/image/assets/TEMP/be49974607e92074195149dd07ce08c646eea48d?width=72",
-  },
-  {
-    id: "4",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "5",
-    type: "deposit",
-    name: "Jeremiah Johns",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-    avatar:
-      "https://api.builder.io/api/v1/image/assets/TEMP/9d931bd96b4451ec550f55a0d925e05a02ac2c72?width=72",
-  },
-  {
-    id: "6",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "7",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "8",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "9",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-  {
-    id: "10",
-    type: "withdrawal",
-    name: "Withdrawal",
-    date: "Aug 12, 2025,  04:35am",
-    amount: "342.66",
-  },
-];
+import walletService from "@/services/wallet";
+import { toast } from "@/lib/toast";
 
 export default function WalletScreen() {
   const router = useRouter();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -114,6 +41,112 @@ export default function WalletScreen() {
   const handleViewAll = () => {
     console.log("View all transactions pressed");
   };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    Promise.all([walletService.getWallet(), walletService.getTransactions()])
+      .then(([wallet, txs]) => {
+        if (!active) return;
+        setBalance(wallet?.balance ?? 0);
+        const mapped = (txs ?? []).map<Transaction>((t, idx) => {
+          const typeRaw = (t.type as string | undefined)?.toLowerCase?.() ?? "";
+          const isDeposit = typeRaw === "deposit" || typeRaw === "credit" || typeRaw === "topup";
+          const amount = Math.abs(t.amount ?? 0).toFixed(2);
+          const date = t.createdAt
+            ? new Date(t.createdAt).toLocaleString()
+            : "—";
+          return {
+            id: t.id ?? String(idx),
+            type: isDeposit ? "deposit" : "withdrawal",
+            name: t.description ?? t.source ?? "Transaction",
+            date,
+            amount,
+          };
+        });
+        setTransactions(mapped);
+      })
+      .catch((err) => {
+        console.error("Failed to load wallet data", err);
+        toast.error("Unable to load wallet", {
+          description: err?.response?.data?.message ?? err?.message ?? "Please try again.",
+        });
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const content = useMemo(() => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Loading wallet...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.balanceCard}>
+          <View style={styles.cardHeader}>
+            <Image
+              source={{
+                uri: "https://api.builder.io/api/v1/image/assets/TEMP/69aef0aad6967d5fabb837ba0b763f5a53af9b95?width=124",
+              }}
+              resizeMode="contain"
+              style={styles.logo}
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setBalanceVisible(!balanceVisible)}
+            >
+              <EyeIconSVG width={24} height={20} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.balanceContent}>
+            <Text style={styles.balanceLabel}>Available Balance</Text>
+            <Text style={styles.balanceAmount}>
+              {balanceVisible ? `$${(balance ?? 0).toFixed(2)}` : "••••••"}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.withdrawButton}
+              onPress={handleWithdraw}
+            >
+              <MoneyWithdrawalIconSVG width={20} height={21} color="#FFF" />
+              <Text style={styles.withdrawText}>Withdraw</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.transactionsSection}>
+          <View style={styles.transactionsHeader}>
+            <Text style={styles.transactionsTitle}>Recent Transactions</Text>
+            <TouchableOpacity onPress={handleViewAll}>
+              <Text style={styles.viewAllText}>View all</Text>
+            </TouchableOpacity>
+          </View>
+
+          {transactions.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No transactions yet</Text>
+              <Text style={styles.emptySubtitle}>New activity will show up here.</Text>
+            </View>
+          ) : (
+            <View style={styles.transactionsList}>
+              {transactions.map((transaction) => (
+                <TransactionItem key={transaction.id} transaction={transaction} />
+              ))}
+            </View>
+          )}
+        </View>
+      </>
+    );
+  }, [loading, balanceVisible, balance, transactions]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -136,61 +169,7 @@ export default function WalletScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.balanceCard}>
-          <View style={styles.cardHeader}>
-            <Image
-              source={{
-                uri: "https://api.builder.io/api/v1/image/assets/TEMP/69aef0aad6967d5fabb837ba0b763f5a53af9b95?width=124",
-              }}
-              resizeMode="contain"
-              style={styles.logo}
-            />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setBalanceVisible(!balanceVisible)}
-            >
-              <EyeIconSVG width={24} height={20} color="#000" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.balanceContent}>
-            <Text style={styles.balanceLabel}>Available Balance</Text>
-            <Text style={styles.balanceAmount}>
-              {balanceVisible ? "$13420.65" : "••••••"}
-            </Text>
-
-            <TouchableOpacity
-              style={styles.withdrawButton}
-              onPress={handleWithdraw}
-            >
-              <MoneyWithdrawalIconSVG width={20} height={21} color="#FFF" />
-              <Text style={styles.withdrawText}>Withdraw</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.transactionsSection}>
-          <View style={styles.transactionsHeader}>
-            <Text style={styles.transactionsTitle}>Recent Transactions</Text>
-            <TouchableOpacity onPress={handleViewAll}>
-              <Text style={styles.viewAllText}>View all</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.transactionsList}>
-            {MOCK_TRANSACTIONS.map((transaction) => (
-              <TransactionItem key={transaction.id} transaction={transaction} />
-            ))}
-          </View>
-
-          <View style={styles.pagination}>
-            <Text style={styles.paginationText}>Showing 1-10 of 20</Text>
-            <TouchableOpacity style={styles.nextButton}>
-              <Text style={styles.nextText}>Next</Text>
-              <Text style={styles.arrow}>→</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {content}
       </ScrollView>
     </SafeAreaView>
   );
@@ -241,6 +220,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 21,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    gap: 10,
+  },
+  loadingText: {
+    fontFamily: "Open Sans",
+    fontSize: 14,
+    color: "#484C52",
   },
   balanceCard: {
     width: "100%",
@@ -334,32 +325,20 @@ const styles = StyleSheet.create({
   transactionsList: {
     gap: 8,
   },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  emptyState: {
+    paddingVertical: 24,
     alignItems: "center",
-    marginTop: 4,
+    gap: 6,
   },
-  paginationText: {
-    color: "#202224",
+  emptyTitle: {
+    fontFamily: "Raleway",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000",
+  },
+  emptySubtitle: {
     fontFamily: "Open Sans",
     fontSize: 14,
-    fontWeight: "700",
-    opacity: 0.8,
-  },
-  nextButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-  },
-  nextText: {
-    color: "#000",
-    fontFamily: "Nunito Sans",
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  arrow: {
-    color: "#000",
-    fontSize: 18,
+    color: "#484C52",
   },
 });

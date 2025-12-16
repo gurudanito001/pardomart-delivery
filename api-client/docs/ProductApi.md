@@ -343,7 +343,7 @@ const { status, data } = await apiInstance.productIdDelete(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **productIdPatch**
-> ProductWithRelations productIdPatch(updateProductBasePayload)
+> ProductWithRelations productIdPatch(updateProductBasePayload, )
 
 
 ### Example
@@ -358,12 +358,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ProductApi(configuration);
 
-let id: string; //The ID of the base product to update. (default to undefined)
 let updateProductBasePayload: UpdateProductBasePayload; //
+let id: string; //The ID of the base product to update. (default to undefined)
 
 const { status, data } = await apiInstance.productIdPatch(
-    id,
-    updateProductBasePayload
+    updateProductBasePayload,
+    id
 );
 ```
 
@@ -398,7 +398,7 @@ const { status, data } = await apiInstance.productIdPatch(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **productIdStatusPatch**
-> productIdStatusPatch(productIdStatusPatchRequest)
+> productIdStatusPatch(productIdStatusPatchRequest, )
 
 Allows an admin to enable or disable a base product by setting its `isActive` flag.
 
@@ -414,12 +414,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ProductApi(configuration);
 
-let id: string; //The ID of the base product to update. (default to undefined)
 let productIdStatusPatchRequest: ProductIdStatusPatchRequest; //
+let id: string; //The ID of the base product to update. (default to undefined)
 
 const { status, data } = await apiInstance.productIdStatusPatch(
-    id,
-    productIdStatusPatchRequest
+    productIdStatusPatchRequest,
+    id
 );
 ```
 
@@ -940,7 +940,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **productVendorIdPatch**
-> VendorProductWithRelations productVendorIdPatch(updateVendorProductPayload)
+> VendorProductWithRelations productVendorIdPatch(updateVendorProductPayload, )
 
 
 ### Example
@@ -955,12 +955,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ProductApi(configuration);
 
-let id: string; //The ID of the vendor product to update. (default to undefined)
 let updateVendorProductPayload: UpdateVendorProductPayload; //
+let id: string; //The ID of the vendor product to update. (default to undefined)
 
 const { status, data } = await apiInstance.productVendorIdPatch(
-    id,
-    updateVendorProductPayload
+    updateVendorProductPayload,
+    id
 );
 ```
 

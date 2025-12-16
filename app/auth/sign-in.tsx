@@ -10,14 +10,17 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-
+  ActivityIndicator,
 } from 'react-native';
+import { toast } from '@/lib/toast';
+import auth from '@/services/auth';
 
 
 export default function SignInScreen() {
-  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email');
+  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('phone');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
 
 
 
@@ -28,13 +31,52 @@ export default function SignInScreen() {
   };
 
   const handleContinue = () => {
-    // Handle sign in logic here
-    const value = activeTab === 'email' ? email : phone;
-    console.log('Sign in with:', activeTab, value);
-    router.push('/auth/verify');
+    if (activeTab === 'phone') {
+      const value = phone.trim();
+
+      // Basic phone validation – only phone login is supported
+      if (!value) {
+        toast.error('Phone number required', {
+          description: 'Please enter your mobile number to continue.',
+        });
+        return;
+      }
+      if (value.replace(/[^0-9]/g, '').length < 8) {
+        toast.error('Invalid phone number', {
+          description: 'Please enter a valid mobile number.',
+        });
+        return;
+      }
+
+      setLoading(true);
+      auth
+        .initiateLogin(value)
+        .then(() => {
+          toast.success('Code sent', {
+            description: 'We sent a verification code to your phone.',
+          });
+          router.push({ pathname: '/auth/verify', params: { mobileNumber: value } });
+        })
+        .catch((err) => {
+          console.error('initiateLogin error', err);
+          const msg =
+            (err as any)?.response?.data?.message ??
+            (err as any)?.message ??
+            'Unable to initiate login. Please try again.';
+          toast.error('Sign in failed', { description: String(msg) });
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    // Email login is not supported by the API
+    toast.error('Email login not supported', {
+      description: 'Please switch to Phone Number to sign in.',
+    });
   };
 
   const handleTabSwitch = (tab: 'email' | 'phone') => {
+    if (loading) return;
     setActiveTab(tab);
   };
 
@@ -68,8 +110,9 @@ export default function SignInScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.socialButton}
-        onPress={() => handleSocialLogin(provider)}
+        style={[styles.socialButton, loading ? { opacity: 0.5 } : {}]}
+        onPress={() => !loading && handleSocialLogin(provider)}
+        disabled={loading}
       >
         {renderIcon()}
       </TouchableOpacity>
@@ -135,6 +178,7 @@ export default function SignInScreen() {
             keyboardType={activeTab === 'email' ? 'email-address' : 'phone-pad'}
             autoCapitalize="none"
             textContentType={activeTab === 'email' ? 'emailAddress' : 'telephoneNumber'}
+            editable={!loading}
           />
         </View>
 
@@ -149,8 +193,12 @@ export default function SignInScreen() {
 
         {/* Continue Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueButtonText}>Continue</Text>
+          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.continueButtonText}>Continue</Text>
+            )}
           </TouchableOpacity>
         </View>
 

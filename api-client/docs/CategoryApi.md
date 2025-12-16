@@ -271,7 +271,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **categoryIdPut**
-> Category categoryIdPut(updateCategoryPayload)
+> Category categoryIdPut(updateCategoryPayload, )
 
 Updates a category\'s details. This can be used to change its name, description, or move it within the hierarchy. - To change a sub-category\'s parent, provide a new `parentId`. - To promote a sub-category to a parent category, set `parentId` to `null`. 
 
@@ -287,12 +287,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new CategoryApi(configuration);
 
-let id: string; //The ID of the category to update. (default to undefined)
 let updateCategoryPayload: UpdateCategoryPayload; //
+let id: string; //The ID of the category to update. (default to undefined)
 
 const { status, data } = await apiInstance.categoryIdPut(
-    id,
-    updateCategoryPayload
+    updateCategoryPayload,
+    id
 );
 ```
 

@@ -1,25 +1,27 @@
-import TabSelector from '@/components/ui/TabSelector';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { GoogleSVG } from '@/components/icons/GoogleSVG';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
 } from 'react-native';
+import { toast } from '@/lib/toast';
+import auth from '@/services/auth';
 
 
 export default function RegisterScreen() {
-  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
 
@@ -28,7 +30,55 @@ export default function RegisterScreen() {
   };
 
   const handleCreateAccount = () => {
-    router.push('/auth/verify');
+    const mobile = phone.trim();
+    const emailValue = email.trim();
+
+    if (!name.trim()) {
+      toast.error('Name required', {
+        description: 'Please enter your full name.',
+      });
+      return;
+    }
+
+    if (!emailValue) {
+      toast.error('Email required', {
+        description: 'Please enter your email address.',
+      });
+      return;
+    }
+
+    if (!mobile) {
+      toast.error('Phone number required', {
+        description: 'Please enter your mobile number.',
+      });
+      return;
+    }
+
+    if (mobile.replace(/[^0-9]/g, '').length < 8) {
+      toast.error('Invalid phone number', {
+        description: 'Please enter a valid mobile number.',
+      });
+      return;
+    }
+
+    setLoading(true);
+    auth
+      .register(name.trim(), mobile, emailValue)
+      .then(() => {
+        toast.success('Account created', {
+          description: 'We sent you a verification code to complete signup.',
+        });
+        router.push({ pathname: '/auth/verify', params: { mobileNumber: mobile } });
+      })
+      .catch((err) => {
+        console.error('register error', err);
+        const msg =
+          (err as any)?.response?.data?.message ??
+          (err as any)?.message ??
+          'Unable to create account. Please try again.';
+        toast.error('Registration failed', { description: String(msg) });
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleSignIn = () => {
@@ -60,12 +110,6 @@ export default function RegisterScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Tab Selector */}
-        <TabSelector
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
         {/* Form Fields */}
         <View style={styles.formContainer}>
           {/* Name Input */}
@@ -76,21 +120,38 @@ export default function RegisterScreen() {
               placeholderTextColor="rgba(111, 115, 128, 0.27)"
               value={name}
               onChangeText={setName}
+              editable={!loading}
               autoCapitalize="words"
             />
           </View>
 
-          {/* Dynamic Email/Phone Input */}
+          {/* Email Input */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder={activeTab === 'email' ? 'Email' : 'Phone'}
+              placeholder="Email"
               placeholderTextColor="rgba(111, 115, 128, 0.27)"
-              value={activeTab === 'email' ? email : phone}
-              onChangeText={activeTab === 'email' ? setEmail : handlePhoneInput}
-              keyboardType={activeTab === 'email' ? 'email-address' : 'phone-pad'}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
               autoCapitalize="none"
-              textContentType={activeTab === 'email' ? 'emailAddress' : 'telephoneNumber'}
+              textContentType="emailAddress"
+              editable={!loading}
+            />
+          </View>
+
+          {/* Phone Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Phone"
+              placeholderTextColor="rgba(111, 115, 128, 0.27)"
+              value={phone}
+              onChangeText={handlePhoneInput}
+              keyboardType="phone-pad"
+              autoCapitalize="none"
+              textContentType="telephoneNumber"
+              editable={!loading}
             />
           </View>
 
@@ -110,8 +171,8 @@ export default function RegisterScreen() {
 
         {/* Continue Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.createButton} onPress={handleCreateAccount}>
-            <Text style={styles.createButtonText}>Continue</Text>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateAccount} disabled={loading}>
+            {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.createButtonText}>Continue</Text>}
           </TouchableOpacity>
 
           {/* Social Login Section */}
@@ -119,24 +180,27 @@ export default function RegisterScreen() {
             <Text style={styles.orText}>or sign in with</Text>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('google')}
-              >
-                <GoogleSVG width={24} height={24} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('facebook')}
-              >
-                <FontAwesome name="facebook" size={24} color="#0085FF" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('apple')}
-              >
-                <AntDesign name="apple" size={24} color="#2B2829" />
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.socialButton, loading ? { opacity: 0.5 } : {}]}
+                    onPress={() => !loading && handleSocialLogin('google')}
+                    disabled={loading}
+                  >
+                    <GoogleSVG width={24} height={24} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.socialButton, loading ? { opacity: 0.5 } : {}]}
+                    onPress={() => !loading && handleSocialLogin('facebook')}
+                    disabled={loading}
+                  >
+                    <FontAwesome name="facebook" size={24} color="#0085FF" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.socialButton, loading ? { opacity: 0.5 } : {}]}
+                    onPress={() => !loading && handleSocialLogin('apple')}
+                    disabled={loading}
+                  >
+                    <AntDesign name="apple" size={24} color="#2B2829" />
+                  </TouchableOpacity>
             </View>
 
             {/* Sign In Link */}
@@ -193,6 +257,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: 33,
+    paddingTop: 35,
     gap: 16,
     marginBottom: 16,
   },

@@ -269,7 +269,7 @@ const { status, data } = await apiInstance.feesIdDelete(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **feesIdPatch**
-> Fee feesIdPatch(updateFeePayload)
+> Fee feesIdPatch(updateFeePayload, )
 
 
 ### Example
@@ -284,12 +284,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new FeeApi(configuration);
 
-let id: string; //The ID of the fee to update. (default to undefined)
 let updateFeePayload: UpdateFeePayload; //
+let id: string; //The ID of the fee to update. (default to undefined)
 
 const { status, data } = await apiInstance.feesIdPatch(
-    id,
-    updateFeePayload
+    updateFeePayload,
+    id
 );
 ```
 

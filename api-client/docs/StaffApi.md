@@ -327,7 +327,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **staffStaffIdPatch**
-> staffStaffIdPatch(staffStaffIdPatchRequest)
+> staffStaffIdPatch(staffStaffIdPatchRequest, )
 
 
 ### Example
@@ -342,12 +342,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new StaffApi(configuration);
 
-let staffId: string; // (default to undefined)
 let staffStaffIdPatchRequest: StaffStaffIdPatchRequest; //
+let staffId: string; // (default to undefined)
 
 const { status, data } = await apiInstance.staffStaffIdPatch(
-    staffId,
-    staffStaffIdPatchRequest
+    staffStaffIdPatchRequest,
+    staffId
 );
 ```
 
