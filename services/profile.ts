@@ -1,6 +1,6 @@
 import api from "./api";
-import type { User } from "../api-client/models/user";
-import type { PaginatedUsers } from "../api-client/models/paginated-users";
+import type { User } from "../api/models/user";
+import type { PaginatedUsers } from "../api/models/paginated-users";
 
 /**
  * NOTE: The API spec does not expose an explicit "current user / me" endpoint.

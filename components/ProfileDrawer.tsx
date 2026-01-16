@@ -61,19 +61,19 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const handleMenuItemPress = (item: string) => {
     if (item === "Edit Profile") {
       onClose();
-      router.push("/(tabs)/home/edit-profile");
+      router.push("/(private)/home/edit-profile");
     } else if (item === "Wallet") {
       onClose();
-      router.push("/(tabs)/home/wallet");
+      router.push("/(private)/home/wallet");
     } else if (item === "Create Ticket") {
       onClose();
-      router.push("/(tabs)/help");
+      router.push("/(private)/help");
     } else if (item === "Payment") {
       onClose();
-      router.push("/(tabs)/home/payment");
+      router.push("/(private)/home/payment");
     } else if (item === "History") {
       onClose();
-      router.push("/(tabs)/home/history");
+      router.push("/(private)/home/history");
     } else {
       console.log(`${item} pressed`);
     }

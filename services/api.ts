@@ -36,7 +36,7 @@ import {
   VendorOpeningHoursApi,
   WalletApi,
   WishlistApi,
-} from "../api-client";
+} from "../api";
 
 const TOKEN_KEY = "PARDOMART_API_TOKEN";
 let inMemoryToken: string | null = null;

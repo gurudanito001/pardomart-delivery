@@ -1,69 +1,97 @@
-import 'react-native-reanimated';
-
+import { Role } from '@/api';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AppProvider, useAuth } from '@/contexts/AppProvider';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { useColorScheme, ActivityIndicator, View } from 'react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import {
-  Raleway_400Regular,
-  Raleway_600SemiBold,
-  Raleway_700Bold,
-} from '@expo-google-fonts/raleway';
-import {
-  OpenSans_400Regular,
-  OpenSans_600SemiBold,
-  OpenSans_700Bold,
-} from '@expo-google-fonts/open-sans';
-import {
-  NunitoSans_400Regular,
-  NunitoSans_600SemiBold,
-  NunitoSans_700Bold,
-} from '@expo-google-fonts/nunito-sans';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { Toaster } from '@/lib/toast';
+import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Toaster } from 'sonner-native';
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
-  const [fontsLoaded] = useFonts({
-    // Register base family names used across the app
-    'Raleway': Raleway_400Regular,
-    'Raleway-600': Raleway_600SemiBold,
-    'Raleway-700': Raleway_700Bold,
+const queryClient = new QueryClient();
 
-    'Open Sans': OpenSans_400Regular,
-    'Open Sans-600': OpenSans_600SemiBold,
-    'Open Sans-700': OpenSans_700Bold,
+function RootLayout() {
+  const { state } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-    'Nunito Sans': NunitoSans_400Regular,
-    'Nunito Sans-600': NunitoSans_600SemiBold,
-    'Nunito Sans-700': NunitoSans_700Bold,
-  });
+  useEffect(() => {
+    // Wait until the auth state is fully loaded
+    if (!state.isReady) {
+      return;
+    }
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
-      </View>
-    );
+    const inAuthGroup = segments[0] === 'auth'; // e.g. /auth/sign-in
+    const inAppGroup = segments[0] === '(private)';
+
+    if (state.isAuthenticated) {
+      const userRole = state.user?.role;
+      if (!inAppGroup) {  // For 'vendor' and any other roles
+        router.replace('/(private)/home');
+      }
+    } else if (!state.isAuthenticated && inAppGroup) {
+      // If the user is not authenticated and is trying to access a private screen,
+      // redirect them to the sign-in screen. This is the primary protection.
+      router.replace('/auth/sign-in');
+    }
+
+    // Hide the splash screen once we are ready and fonts are loaded.
+    if (state.isReady) {
+      SplashScreen.hideAsync();
+    }
+
+  }, [state.isReady, state.isAuthenticated, segments, router, state]);
+
+  // Render nothing until the auth state is determined and redirection is complete.
+  // This prevents a flash of the wrong screen.
+  if (!state.isReady) {
+    return null;
   }
 
+  return <Slot />;
+}
+
+export default function AppLayout() {
+  const colorScheme = useColorScheme();
+
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
+    "OpenSans-SemiBold": require("../assets/fonts/OpenSans-SemiBold.ttf"),
+    "Raleway-Bold": require("../assets/fonts/Raleway-Bold.ttf"),
+    "Raleway-SemiBold": require("../assets/fonts/Raleway-SemiBold.ttf"),
+    "Raleway-Regular": require("../assets/fonts/Raleway-Regular.ttf"),
+  });
+
+
+
+  if (!loaded) {
+    return null;
+  }
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* AuthProvider will redirect to either auth or (tabs) depending on stored token */}
-      <AuthProvider>
-        <Stack initialRouteName="auth" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="go-online" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <Toaster position="top-center" />
-      </AuthProvider>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <QueryClientProvider client={queryClient}>
+            <AppProvider>
+              <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <RootLayout />
+                <StatusBar style="auto" />
+                <Toaster position="bottom-center" theme={colorScheme === 'dark' ? 'dark' : 'dark'} />
+              </ThemeProvider>
+            </AppProvider>
+          </QueryClientProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

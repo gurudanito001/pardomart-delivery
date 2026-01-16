@@ -29,7 +29,7 @@ export default function GoOnlinePage() {
 
   const handleEnableLocation = () => {
     setShowLocationModal(false);
-    router.push('/(tabs)/home');
+    router.push('/(private)/home');
   };
 
   const handleCancelLocation = () => {

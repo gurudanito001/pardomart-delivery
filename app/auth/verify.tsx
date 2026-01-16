@@ -11,7 +11,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { toast } from '@/lib/toast';
+import { toast } from '@/utils/toast';
 import auth from '@/services/auth';
 
 export default function VerifyScreen() {

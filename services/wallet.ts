@@ -1,6 +1,6 @@
 import api from "./api";
-import type { Wallet } from "../api-client/models/wallet";
-import type { TransactionWithRelations } from "../api-client/models/transaction-with-relations";
+import type { Wallet } from "../api/models/wallet";
+import type { TransactionWithRelations } from "../api/models/transaction-with-relations";
 
 async function getWallet(): Promise<Wallet> {
   const walletApi = api.getWalletApi();
