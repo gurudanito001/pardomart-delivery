@@ -1,24 +1,23 @@
 import { GoogleSVG } from '@/components/icons/GoogleSVG';
+import PhoneInputWithCountry from '@/components/PhoneInputWithCountry';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   ActivityIndicator,
+  StatusBar
 } from 'react-native';
 import { toast } from '@/utils/toast';
 import auth from '@/services/auth';
 
 
 export default function SignInScreen() {
-  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('phone');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -30,60 +29,43 @@ export default function SignInScreen() {
     router.back();
   };
 
-  const handleContinue = () => {
-    if (activeTab === 'phone') {
-      const value = phone.trim();
+  const handleContinue = async () => {
+    const value = phone.trim();
 
-      // Basic phone validation – only phone login is supported
-      if (!value) {
-        toast.error('Phone number required', {
-          description: 'Please enter your mobile number to continue.',
-        });
-        return;
-      }
-      if (value.replace(/[^0-9]/g, '').length < 8) {
-        toast.error('Invalid phone number', {
-          description: 'Please enter a valid mobile number.',
-        });
-        return;
-      }
-
-      setLoading(true);
-      auth
-        .initiateLogin(value)
-        .then(() => {
-          toast.success('Code sent', {
-            description: 'We sent a verification code to your phone.',
-          });
-          router.push({ pathname: '/auth/verify', params: { mobileNumber: value } });
-        })
-        .catch((err) => {
-          console.error('initiateLogin error', err);
-          const msg =
-            (err as any)?.response?.data?.message ??
-            (err as any)?.message ??
-            'Unable to initiate login. Please try again.';
-          toast.error('Sign in failed', { description: String(msg) });
-        })
-        .finally(() => setLoading(false));
+    // Basic phone validation
+    if (!value) {
+      toast.error('Phone number required', {
+        description: 'Please enter your mobile number to continue.',
+      });
+      return;
+    }
+    if (value.replace(/[^0-9]/g, '').length < 8) {
+      toast.error('Invalid phone number', {
+        description: 'Please enter a valid mobile number.',
+      });
       return;
     }
 
-    // Email login is not supported by the API
-    toast.error('Email login not supported', {
-      description: 'Please switch to Phone Number to sign in.',
-    });
-  };
-
-  const handleTabSwitch = (tab: 'email' | 'phone') => {
-    if (loading) return;
-    setActiveTab(tab);
-  };
-
-  const handlePhoneInput = (text: string) => {
-    // Only allow numbers and some formatting characters
-    const cleanedText = text.replace(/[^0-9+\-\s()]/g, '');
-    setPhone(cleanedText);
+    setLoading(true);
+    try {
+      const response = await auth.initiateLogin(value, 'delivery_person');
+      toast.success('Code sent', {
+        description: 'We sent a verification code to your phone.',
+      });
+      router.push({
+        pathname: '/auth/verify',
+        params: { identifier: value, role: response?.role, mobileNumber: value },
+      });
+    } catch (err) {
+      console.error('initiateLogin error', err);
+      const msg =
+        (err as any)?.response?.data?.message ??
+        (err as any)?.message ??
+        'Unable to initiate login. Please try again.';
+      toast.error('Sign in failed', { description: String(msg) });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = () => {
@@ -121,8 +103,7 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      
-      {/* Header */}
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <View style={styles.backButtonCircle}>
@@ -133,52 +114,15 @@ export default function SignInScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Tab Selector */}
-        <View style={styles.tabContainer}>
-          <View style={styles.tabSelector}>
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === 'email' ? styles.activeTab : styles.inactiveTab
-              ]}
-              onPress={() => handleTabSwitch('email')}
-            >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'email' ? styles.activeTabText : styles.inactiveTabText
-              ]}>
-                Email
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === 'phone' ? styles.activeTab : styles.inactiveTab
-              ]}
-              onPress={() => handleTabSwitch('phone')}
-            >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'phone' ? styles.activeTabText : styles.inactiveTabText
-              ]}>
-                Phone Number
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Dynamic Input */}
+        {/* Phone Number Input */}
         <View style={styles.formContainer}>
-          <TextInput
-            style={styles.emailInput}
-            placeholder={activeTab === 'email' ? 'Email' : 'Phone'}
-            placeholderTextColor="rgba(111, 115, 128, 0.27)"
-            value={activeTab === 'email' ? email : phone}
-            onChangeText={activeTab === 'email' ? setEmail : handlePhoneInput}
-            keyboardType={activeTab === 'email' ? 'email-address' : 'phone-pad'}
-            autoCapitalize="none"
-            textContentType={activeTab === 'email' ? 'emailAddress' : 'telephoneNumber'}
+          <Text style={styles.inputLabel}>Phone Number</Text>
+          <PhoneInputWithCountry
+            value={phone}
+            onChangeText={setPhone}
             editable={!loading}
+            placeholder="e.g. +1 801 234 5678"
+            autoFocus
           />
         </View>
 
@@ -216,7 +160,7 @@ export default function SignInScreen() {
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={handleSignUp}>
-              <Text style={styles.signUpLink}>SIGN UP</Text>
+              <Text style={styles.signUpLink}>Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -263,67 +207,17 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  tabContainer: {
+  formContainer: {
     paddingHorizontal: 33,
     paddingTop: 35,
     marginBottom: 27,
   },
-  tabSelector: {
-    flexDirection: 'row',
-    backgroundColor: '#D9D9D9',
-    borderRadius: 16,
-    padding: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-    position: 'relative',
-    alignSelf: 'stretch',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 53,
-  },
-  activeTab: {
-    backgroundColor: '#FFF',
-  },
-  inactiveTab: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  tabText: {
-    fontSize: 16,
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: 'Open Sans',
     fontWeight: '600',
-    fontFamily: 'Raleway',
-  },
-  activeTabText: {
-    color: '#000',
-    fontWeight: '700',
-  },
-  inactiveTabText: {
-    color: '#7C7B7B',
-    fontWeight: '700',
-  },
-  formContainer: {
-    paddingHorizontal: 33,
-    marginBottom: 19,
-  },
-  emailInput: {
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#B4BED4',
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    fontSize: 16,
-    fontFamily: 'Nunito Sans',
-    color: '#6F7380',
+    color: '#2B2829',
+    marginBottom: 8,
   },
   termsContainer: {
     paddingHorizontal: 33,

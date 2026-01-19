@@ -1,9 +1,10 @@
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { GoogleSVG } from '@/components/icons/GoogleSVG';
+import PhoneInputWithCountry from '@/components/PhoneInputWithCountry';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { toast } from '@/utils/toast';
 import auth from '@/services/auth';
@@ -23,62 +25,51 @@ export default function RegisterScreen() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
-
   const handleBack = () => {
     router.back();
   };
 
-  const handleCreateAccount = () => {
-    const mobile = phone.trim();
-    const emailValue = email.trim();
-
+  const handleCreateAccount = async () => {
     if (!name.trim()) {
-      toast.error('Name required', {
-        description: 'Please enter your full name.',
-      });
+      toast.error('Please enter your name.');
       return;
     }
-
-    if (!emailValue) {
-      toast.error('Email required', {
-        description: 'Please enter your email address.',
-      });
+    if (!email.trim()) {
+      toast.error('Please enter your email address.');
       return;
     }
-
-    if (!mobile) {
-      toast.error('Phone number required', {
-        description: 'Please enter your mobile number.',
-      });
+    if (!phone.trim()) {
+      toast.error('Please enter your phone number.');
       return;
     }
-
-    if (mobile.replace(/[^0-9]/g, '').length < 8) {
-      toast.error('Invalid phone number', {
-        description: 'Please enter a valid mobile number.',
-      });
+    if (!agreedToTerms) {
+      toast.error('You must agree to the Terms of Service and Privacy Policy.');
       return;
     }
 
     setLoading(true);
-    auth
-      .register(name.trim(), mobile, emailValue)
-      .then(() => {
-        toast.success('Account created', {
-          description: 'We sent you a verification code to complete signup.',
-        });
-        router.push({ pathname: '/auth/verify', params: { mobileNumber: mobile } });
-      })
-      .catch((err) => {
-        console.error('register error', err);
-        const msg =
-          (err as any)?.response?.data?.message ??
-          (err as any)?.message ??
-          'Unable to create account. Please try again.';
-        toast.error('Registration failed', { description: String(msg) });
-      })
-      .finally(() => setLoading(false));
+    try {
+      await auth.register(name.trim(), phone.trim(), email.trim());
+      toast.success('Registration successful! Please verify your account.');
+      router.push({
+        pathname: '/auth/verify',
+        params: {
+          identifier: phone.trim(),
+          fromScreen: 'register',
+          role: 'delivery_person',
+          mobileNumber: phone.trim(),
+        },
+      });
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.[0]?.msg ||
+        'An unexpected error occurred during registration.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignIn = () => {
@@ -90,15 +81,10 @@ export default function RegisterScreen() {
     console.log('Social login with:', provider);
   };
 
-  const handlePhoneInput = (text: string) => {
-    // Only allow numbers and some formatting characters
-    const cleanedText = text.replace(/[^0-9+\-\s()]/g, '');
-    setPhone(cleanedText);
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -114,6 +100,7 @@ export default function RegisterScreen() {
         <View style={styles.formContainer}>
           {/* Name Input */}
           <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Full Name</Text>
             <TextInput
               style={styles.textInput}
               placeholder="Name"
@@ -127,6 +114,7 @@ export default function RegisterScreen() {
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email Address</Text>
             <TextInput
               style={styles.textInput}
               placeholder="Email"
@@ -142,29 +130,29 @@ export default function RegisterScreen() {
 
           {/* Phone Input */}
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Phone"
-              placeholderTextColor="rgba(111, 115, 128, 0.27)"
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <PhoneInputWithCountry
               value={phone}
-              onChangeText={handlePhoneInput}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
-              textContentType="telephoneNumber"
+              onChangeText={setPhone}
               editable={!loading}
+              placeholder="e.g. 801 234 5678"
             />
           </View>
-
-
-
-
         </View>
 
         {/* Terms Text */}
-        <View style={styles.termsTextContainer}>
-          <Text style={styles.termsOnlyText}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.linkText}>Terms of Service</Text>,{' '}
+        <View style={styles.termsContainer}>
+          <TouchableOpacity
+            style={styles.checkbox}
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+          >
+            <View style={[styles.checkboxBox, agreedToTerms && styles.checkboxChecked]}>
+              {agreedToTerms && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.termsText}>
+            I agree to the{' '}
+            <Text style={styles.linkText}>Terms of Service</Text> and{' '}
             <Text style={styles.linkText}>Privacy Policy</Text>
           </Text>
         </View>
@@ -177,7 +165,7 @@ export default function RegisterScreen() {
 
           {/* Social Login Section */}
           <View style={styles.socialContainer}>
-            <Text style={styles.orText}>or sign in with</Text>
+            {/* <Text style={styles.orText}>or sign in with</Text>
 
             <View style={styles.socialButtonsContainer}>
                   <TouchableOpacity
@@ -201,13 +189,13 @@ export default function RegisterScreen() {
                   >
                     <AntDesign name="apple" size={24} color="#2B2829" />
                   </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Sign In Link */}
             <View style={styles.signInSection}>
               <Text style={styles.signInText}>Do you have an account? </Text>
               <TouchableOpacity onPress={handleSignIn}>
-                <Text style={styles.signInLink}>SIGN IN</Text>
+                <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -264,6 +252,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: 0,
   },
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: 'Open Sans',
+    fontWeight: '600',
+    color: '#2B2829',
+    marginBottom: 8,
+  },
   textInput: {
     height: 48,
     borderRadius: 16,
@@ -275,11 +270,38 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito Sans',
     color: '#6F7380',
   },
-  termsTextContainer: {
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 7,
     paddingHorizontal: 33,
-    marginBottom: 19,
+    marginBottom: 24,
   },
-  termsOnlyText: {
+  checkbox: {
+    marginTop: 2,
+  },
+  checkboxBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 5,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#B4BED4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#0085FF',
+    borderColor: '#0085FF',
+  },
+  checkmark: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  termsText: {
+    flex: 1,
     fontSize: 12,
     fontFamily: 'Open Sans',
     fontWeight: '600',
@@ -293,7 +315,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 33,
     gap: 16,
-    paddingBottom: 40,
+    paddingVertical: 20,
   },
   createButton: {
     backgroundColor: '#0085FF',
@@ -307,6 +329,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 9,
     elevation: 2,
+  },
+  disabledButton: {
+    backgroundColor: '#A9A9A9',
   },
   createButtonText: {
     fontSize: 16,

@@ -32,7 +32,6 @@ function RootLayout() {
     const inAppGroup = segments[0] === '(private)';
 
     if (state.isAuthenticated) {
-      const userRole = state.user?.role;
       if (!inAppGroup) {  // For 'vendor' and any other roles
         router.replace('/(private)/home');
       }

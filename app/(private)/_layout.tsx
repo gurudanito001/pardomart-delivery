@@ -12,31 +12,38 @@ import {
 export default function TabLayout() {
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: 'auto',
-          backgroundColor: '#FFF',
-          borderTopWidth: 0,
-          paddingTop: 16,
-          paddingBottom: 16,
+          backgroundColor: "#fff",
+          display: "flex",
           paddingHorizontal: 17,
+          height: 70,
+          borderTopWidth: 0,
           elevation: 0,
           shadowOpacity: 0,
+        },
+        tabBarItemStyle: {
+          alignSelf: "center",
+          paddingHorizontal: 2,
+          flex: 1,
+          alignItems: "center",
         },
         tabBarActiveTintColor: '#0085FF',
         tabBarInactiveTintColor: '#484C52',
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontFamily: 'Raleway',
-          fontWeight: '600',
+          fontSize: 10,
+          fontFamily: "Raleway",
+          fontWeight: "400",
           lineHeight: 16,
-          marginTop: 6,
+          marginTop: 4,
+          marginBottom: 0,
+          paddingBottom: 0,
         },
-        tabBarItemStyle: {
-          paddingHorizontal: 0,
+        tabBarIconStyle: {
+          marginBottom: 0,
         },
-        tabBarShowLabel: true,
       }}
     >
       <Tabs.Screen 

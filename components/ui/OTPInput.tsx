@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  TextInput,
   StyleSheet,
+  TextInput,
+  View,
   ViewStyle,
 } from 'react-native';
 
@@ -48,12 +48,8 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   };
 
   const handleFocus = (index: number) => {
-    // Clear the input when focused for better UX
-    if (value[index]) {
-      const newOtp = [...value];
-      newOtp[index] = '';
-      onChange(newOtp);
-    }
+    // Select text on focus for easy replacement without clearing
+    inputRefs.current[index]?.setNativeProps({ selection: { start: 0, end: 1 } });
   };
 
   return (
@@ -89,12 +85,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 20,
+    gap: 10,
   },
   
   inputContainer: {
-    width: 49,
-    height: 49,
+    width: 45,
+    height: 45,
     borderRadius: 6.5,
     borderWidth: 1.6,
     justifyContent: 'center',
@@ -102,23 +98,22 @@ const styles = StyleSheet.create({
   },
   
   inputFilled: {
-    borderColor: '#0085FF',
+    borderColor: '#06888C',
     backgroundColor: '#FFFFFF',
   },
   
   inputEmpty: {
-    borderColor: 'rgba(207, 219, 236, 1)',
-    backgroundColor: 'rgba(230, 102, 26, 0.02)',
+    borderColor: '#B4BED4',
+    backgroundColor: '#F9F9F9',
   },
   
   input: {
-    fontSize: 22,
-    fontWeight: '700',
-    fontFamily: 'Open Sans',
-    color: '#1C2035',
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Nunito Sans',
+    color: '#333333',
     textAlign: 'center',
     width: '100%',
     height: '100%',
-    letterSpacing: 0.653,
   },
 });

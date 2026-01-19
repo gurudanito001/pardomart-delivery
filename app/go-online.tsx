@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  StatusBar
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -46,6 +47,7 @@ export default function GoOnlinePage() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       {/* World Map Background */}
       <Image
         source={{
@@ -73,10 +75,6 @@ export default function GoOnlinePage() {
 
       {/* Bottom Modal Card */}
       <View style={styles.bottomCard}>
-        {/* Close Button */}
-        <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-          <CloseSVG width={30} height={30} color="#000" />
-        </TouchableOpacity>
 
         {/* Handle Bar */}
         <View style={styles.handleBar} />
@@ -99,9 +97,7 @@ export default function GoOnlinePage() {
 
           {/* Go Online Button */}
           <TouchableOpacity style={styles.goOnlineButton} onPress={handleGoOnline}>
-            <View style={styles.buttonIconContainer}>
-              <DoubleArrowSVG width={19} height={20} color="#FFF" />
-            </View>
+            
             <Text style={styles.buttonText}>Go Online</Text>
           </TouchableOpacity>
         </View>
@@ -133,7 +129,7 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 0,
+    top: StatusBar.currentHeight!,
     left: 0,
     right: 0,
     zIndex: 10,
