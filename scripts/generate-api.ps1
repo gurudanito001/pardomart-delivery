@@ -1,6 +1,6 @@
 # PardoMart API Client Generation Script (Windows / PowerShell)
 # This script generates a TypeScript Axios API client from the OpenAPI specification.
-# Output structure (inside `api-client`):
+# Output structure (inside `api`):
 #   - `endpoints/`  : Axios API classes (e.g. AuthApi, ProductApi, EarningsApi)
 #   - `models/`     : TypeScript models/types (e.g. User, Product, Order)
 #   - `api.ts`      : Combined export surface (re-exporting endpoints & models)
@@ -9,7 +9,7 @@
 Write-Host "Generating PardoMart API Client..." -ForegroundColor Green
 
 $API_SPEC_URL = "https://pardomart-node-api-vaje.onrender.com/api-docs/openapi.json"
-$OUTPUT_DIR = "./api-client"
+$OUTPUT_DIR = "./api"
 
 # Clean only generated files, preserve custom configuration
 Write-Host "Cleaning generated API files (preserving config.ts)..." -ForegroundColor Yellow
@@ -80,8 +80,8 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Custom configuration preserved:" -ForegroundColor Cyan
     Write-Host "   - config.ts (API configuration & token management)" -ForegroundColor White
     Write-Host ""
-    Write-Host "You can import APIs from 'api-client/endpoints' (e.g., AuthApi, ProductApi)" -ForegroundColor Cyan
-    Write-Host "You can import types from 'api-client/models' (e.g., User, Product)" -ForegroundColor Cyan
+    Write-Host "You can import APIs from 'api/endpoints' (e.g., AuthApi, ProductApi)" -ForegroundColor Cyan
+    Write-Host "You can import types from 'api/models' (e.g., User, Product)" -ForegroundColor Cyan
 }
 else {
     Write-Host "API client generation failed!" -ForegroundColor Red

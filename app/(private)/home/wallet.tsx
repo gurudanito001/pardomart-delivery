@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     lineHeight: 25,
   },
   viewAllText: {
-    color: "#06888C",
+    color: "#0085FF",
     fontFamily: "Raleway",
     fontSize: 16,
     fontWeight: "700",

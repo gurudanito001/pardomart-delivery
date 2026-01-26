@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
-import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { MenuButton, NotificationSVG, SupportSVG } from '../../../components';
 import Svg, { Path, Rect, Ellipse } from 'react-native-svg';
+import { useQuery } from '@tanstack/react-query';
+import { OrderApi } from '../../../api/endpoints/order-api';
+import { apiConfig } from '../../../api/config';
+import { useAuth } from '@/contexts/AppProvider';
 
 const ShoppingBagIcon = () => (
   <Svg width={25} height={25} viewBox="0 0 25 25" fill="none">
@@ -129,53 +136,71 @@ interface ItemCategory {
 }
 
 export default function OrderPreviewScreen() {
-  const categories: ItemCategory[] = [
-    {
-      name: 'Meat',
-      items: [
-        {
-          id: '1',
-          name: 'Tyson All natural chicken freshwings, family pack, 4.25-3.5lb Tray',
-          image: 'https://api.builder.io/api/v1/image/assets/TEMP/63f1ba43866c14d9b7ec4aeb2941bb00c04b7d4c?width=104',
-          quantity: 2,
-          price: '$3.34',
-          isPerishable: true,
-        },
-        {
-          id: '2',
-          name: 'Tyson All natural chicken freshwings, family pack, 4.25-3.5lb Tray',
-          image: 'https://api.builder.io/api/v1/image/assets/TEMP/63f1ba43866c14d9b7ec4aeb2941bb00c04b7d4c?width=104',
-          quantity: 2,
-          price: '$3.34',
-          isPerishable: true,
-        },
-      ],
-    },
-    {
-      name: 'Wal Deli',
-      items: [
-        {
-          id: '3',
-          name: 'Tyson All natural chicken freshwings, family pack, 4.25-3.5lb Tray',
-          image: 'https://api.builder.io/api/v1/image/assets/TEMP/d8e31a39f95ad8a07cdcfb9245798e545b674e5b?width=96',
-          quantity: 2,
-          price: '$3.34',
-          isPerishable: true,
-        },
-        {
-          id: '4',
-          name: 'Tyson All natural chicken freshwings, family pack, 4.25-3.5lb Tray',
-          image: 'https://api.builder.io/api/v1/image/assets/TEMP/9163f624e8c0af4229d79bbd17692fd7d6ea4de5?width=86',
-          quantity: 2,
-          price: '$3.34',
-          isPerishable: true,
-        },
-      ],
-    },
-  ];
+  const { id } = useLocalSearchParams() as { id: string };
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+  const { state } = useAuth();
 
-  const handleAcceptOrder = () => {
-    router.push('/orders/start-trip');
+  const { data: order, isLoading } = useQuery({
+    queryKey: ['order', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await orderApi.orderIdGet(id);
+      console.log('Fetched Order Data:', response.data);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+
+  const categories: ItemCategory[] = useMemo(() => {
+    if (!order?.orderItems) return [];
+    
+    const grouped: Record<string, ShoppingItem[]> = {};
+
+    order.orderItems.forEach((item: any) => {
+        const product = item.vendorProduct;
+        const categoryName = product?.categories?.[0]?.name || 'Shopping List';
+
+        if (!grouped[categoryName]) {
+            grouped[categoryName] = [];
+        }
+
+        grouped[categoryName].push({
+          id: item.id,
+          name: product?.name || product?.product?.name || 'Unknown Item',
+          image: product?.images?.[0] || product?.product?.images?.[0] || product?.product?.imageUrl || 'https://via.placeholder.com/100',
+          quantity: item.quantity || 0,
+          price: `$${Number(product?.price || 0).toFixed(2)}`,
+          isPerishable: product?.isAgeRestricted || false,
+        });
+    });
+
+    return Object.entries(grouped).map(([name, items]) => ({ name, items }));
+  }, [order]);
+
+  const [isAccepting, setIsAccepting] = useState(false);
+
+  const handleAcceptOrder = async () => {
+    if (!id) return;
+    setIsAccepting(true);
+    try {
+      if (order?.deliveryPersonId === state.user?.id) {
+        router.push({
+          pathname: '/(private)/orders/start-trip',
+          params: { id }
+        });
+      } else if (order?.deliveryPersonId === null) {
+        await orderApi.orderOrderIdAcceptDeliveryPatch(id);
+        router.push({
+          pathname: '/(private)/orders/start-trip',
+          params: { id }
+        });
+      }
+      
+    } catch (error) {
+      console.error('Failed to accept order:', error);
+    } finally {
+      setIsAccepting(false);
+    }
   };
 
   const handleGoBack = () => {
@@ -183,6 +208,26 @@ export default function OrderPreviewScreen() {
       router.back();
     }
   };
+
+  const handleCall = (phoneNumber?: string) => {
+    if (phoneNumber) {
+      Linking.openURL(`tel:${phoneNumber}`);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  };
+
+  if (isLoading || !order) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#0085FF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -225,7 +270,7 @@ export default function OrderPreviewScreen() {
             <Text style={styles.deliveryTitle}>Delivery details</Text>
             <View style={styles.deliveryBadge}>
               <ShoppingBagIcon />
-              <Text style={styles.badgeText}>Shop and Deliver</Text>
+              <Text style={styles.badgeText}>{order.shoppingMethod === 'delivery_person' ? 'Shop and Deliver' : 'Deliver'}</Text>
             </View>
           </View>
 
@@ -234,14 +279,16 @@ export default function OrderPreviewScreen() {
             <View style={styles.customerHeader}>
               <View style={styles.customerInfo}>
                 <Image
-                  source={{ uri: 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60' }}
+                  source={{ uri: order.user?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60' }}
                   style={styles.avatar}
                 />
-                <Text style={styles.customerName}>Mr Damilare Adebanjo</Text>
+                <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
               </View>
               <View style={styles.contactIcons}>
                 <MessageIcon />
-                <PhoneIcon />
+                <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber)}>
+                  <PhoneIcon />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -251,16 +298,26 @@ export default function OrderPreviewScreen() {
             <View style={styles.totalSection}>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Estimated Total</Text>
-                <Text style={styles.totalAmount}>$120.60</Text>
+                <Text style={styles.totalAmount}>${Number(order.totalAmount || 0).toFixed(2)}</Text>
               </View>
               <View style={styles.costBreakdown}>
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Item Cost</Text>
-                  <Text style={styles.costValue}>$100.00</Text>
+                  <Text style={styles.costValue}>
+                    ${Number((order.totalAmount || 0) - (order.deliveryFee || 0) - (order.serviceFee || 0) - (order.shoppingFee || 0)).toFixed(2)}
+                  </Text>
                 </View>
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Shopping Fee</Text>
-                  <Text style={styles.costValue}>$20.32</Text>
+                  <Text style={styles.costValue}>${Number(order.shoppingFee || 0).toFixed(2)}</Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Delivery Fee</Text>
+                  <Text style={styles.costValue}>${Number(order.deliveryFee || 0).toFixed(2)}</Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Service Fee</Text>
+                  <Text style={styles.costValue}>${Number(order.serviceFee || 0).toFixed(2)}</Text>
                 </View>
               </View>
             </View>
@@ -269,53 +326,55 @@ export default function OrderPreviewScreen() {
 
             {/* Progress Section */}
             <View style={styles.progressSection}>
-              <Text style={styles.progressText}>4.5 Miles - 20 Items</Text>
+              <Text style={styles.progressText}>{order.vendor?.distance || '0'} Miles - {order.orderItems?.length || 0} Items</Text>
               <View style={styles.progressBar}>
                 <ProgressLine />
               </View>
               <View style={styles.addressRow}>
                 <View style={styles.addressLeft}>
-                  <Text style={styles.addressName}>Mr Damilare Adebanjo</Text>
+                  <Text style={styles.addressName}>{order.user?.name || 'Customer'}</Text>
                   <View style={styles.dateTimeRow}>
                     <View style={styles.dateTimeItem}>
                       <ClockIcon />
-                      <Text style={styles.dateTimeText}>12:00pm</Text>
+                      <Text style={styles.dateTimeText}>{new Date(order.scheduledShoppingStartTime || order.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                     </View>
                     <View style={styles.dateTimeItem}>
                       <CalendarIcon />
-                      <Text style={styles.dateTimeText}>03/2025</Text>
+                      <Text style={styles.dateTimeText}>{formatDate(order.scheduledShoppingStartTime || order.createdAt || new Date().toISOString())}</Text>
                     </View>
                   </View>
                 </View>
                 <View style={styles.addressRight}>
-                  <Text style={styles.addressLine}>47 North Union Avenue</Text>
-                  <Text style={styles.addressCity}>Chicago Illiniou, 60612, US</Text>
+                  <Text style={styles.addressLine}>{order.deliveryAddress?.addressLine1 || 'No address'}</Text>
+                  <Text style={styles.addressCity}>{[order.deliveryAddress?.city, order.deliveryAddress?.state, order.deliveryAddress?.postalCode].filter(Boolean).join(', ')}</Text>
                 </View>
               </View>
             </View>
-          </View>
 
-          {/* Order Code */}
-          <View style={styles.orderCodeSection}>
-            <Text style={styles.orderCode}>Order code - 987BNTT43</Text>
-            <CopyIcon />
+            {/* Order Code */}
+            <View style={styles.orderCodeSection}>
+              <Text style={styles.orderCode}>Order code - {order.orderCode}</Text>
+              <CopyIcon />
+            </View>
           </View>
 
           {/* Store Info */}
           <View style={styles.storeCard}>
             <View style={styles.storeInfo}>
               <Image
-                source={{ uri: 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66' }}
+                source={{ uri: order.vendor?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66' }}
                 style={styles.storeLogo}
               />
               <View style={styles.storeDetails}>
-                <Text style={styles.storeName}>Jewel Osco</Text>
-                <Text style={styles.storeAddress}>Wesside 120 ny jersey 2.5 Miles</Text>
+                <Text style={styles.storeName}>{order.vendor?.name || 'Store Name'}</Text>
+                <Text style={styles.storeAddress}>{order.vendor?.address || 'Store Address'}</Text>
               </View>
             </View>
             <View style={styles.storeActions}>
               <MessageIcon />
-              <PhoneIcon />
+              <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber)}>
+                <PhoneIcon />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -323,7 +382,7 @@ export default function OrderPreviewScreen() {
           <View style={styles.shoppingSection}>
             <View style={styles.shoppingHeader}>
               <Text style={styles.shoppingLabel}>SHOPPING ITEMS</Text>
-              <Text style={styles.itemCount}>20 ITEMS</Text>
+              <Text style={styles.itemCount}>{order.orderItems?.length || 0} ITEMS</Text>
             </View>
 
             {categories.map((category) => (
@@ -363,8 +422,12 @@ export default function OrderPreviewScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.acceptButton} onPress={handleAcceptOrder}>
-              <Text style={styles.acceptButtonText}>Accept Order</Text>
+            <TouchableOpacity style={styles.acceptButton} onPress={handleAcceptOrder} disabled={isAccepting}>
+              {isAccepting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.acceptButtonText}>Accept Order</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
               <BackArrowIcon />

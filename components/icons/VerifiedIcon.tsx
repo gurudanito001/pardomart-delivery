@@ -4,7 +4,7 @@ import { Svg, Circle, Path } from 'react-native-svg';
 export const VerifiedIcon: React.FC<{ width?: number; height?: number; color?: string }> = ({
   width = 200,
   height = 200,
-  color = '#06888C',
+  color = '#0085FF',
 }) => {
   return (
     <Svg width={width} height={height} viewBox="0 0 200 200" fill="none">

@@ -20,10 +20,10 @@ export const MenuButton: React.FC<MenuButtonProps> = ({ iconColor = '#000' }) =>
         <MenuSVG width={24} height={24} color={iconColor} />
       </TouchableOpacity>
 
-      <ProfileDrawer
+      {/* <ProfileDrawer
         visible={showDrawer}
         onClose={() => setShowDrawer(false)}
-      />
+      /> */}
     </>
   );
 };

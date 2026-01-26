@@ -1,5 +1,7 @@
 export { default as LocationPermissionModal } from './LocationPermissionModal';
 export { default as NavigationMapModal } from './NavigationMapModal';
+export { default as DeliveryMap } from './DeliveryMap';
+export { default as LiveTrackingStats } from './LiveTrackingStats';
 export * from './ui';
 export * from './icons';
 export { default as ThemedText } from './ThemedText';

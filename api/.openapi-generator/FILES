@@ -106,6 +106,9 @@ docs/NotificationsReadAllPatch200Response.md
 docs/Order.md
 docs/OrderAdminOverviewGet200Response.md
 docs/OrderApi.md
+docs/OrderDeliveryAvailableGet200Response.md
+docs/OrderDeliveryAvailableGet200ResponseDataInner.md
+docs/OrderDeliveryAvailableGet200ResponsePagination.md
 docs/OrderIdVerifyPickupPostRequest.md
 docs/OrderItem.md
 docs/OrderItemPayload.md
@@ -174,6 +177,7 @@ docs/UpdateOrderPayload.md
 docs/UpdateOrderStatusPayload.md
 docs/UpdateProductBasePayload.md
 docs/UpdateRatingPayload.md
+docs/UpdateSupportTicketPayload.md
 docs/UpdateSupportTicketStatusPayload.md
 docs/UpdateTagPayload.md
 docs/UpdateTipPayload.md
@@ -328,6 +332,9 @@ models/notification-type.ts
 models/notification.ts
 models/notifications-read-all-patch200-response.ts
 models/order-admin-overview-get200-response.ts
+models/order-delivery-available-get200-response-data-inner.ts
+models/order-delivery-available-get200-response-pagination.ts
+models/order-delivery-available-get200-response.ts
 models/order-id-verify-pickup-post-request.ts
 models/order-item-payload.ts
 models/order-item-status.ts
@@ -390,6 +397,7 @@ models/update-order-payload.ts
 models/update-order-status-payload.ts
 models/update-product-base-payload.ts
 models/update-rating-payload.ts
+models/update-support-ticket-payload.ts
 models/update-support-ticket-status-payload.ts
 models/update-tag-payload.ts
 models/update-tip-payload.ts

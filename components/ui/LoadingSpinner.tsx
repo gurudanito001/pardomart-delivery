@@ -17,7 +17,7 @@ export interface LoadingSpinnerProps {
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'large',
-  color = '#06888C',
+  color = '#0085FF',
   message,
   style,
   overlay = false,

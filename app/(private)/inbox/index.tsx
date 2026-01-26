@@ -1,236 +1,394 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { apiConfig } from '../../../api/config';
+import { AnnouncementApi } from '../../../api/endpoints/announcement-api';
+import NotificationBell from '../../../components/NotificationBell';
+import { toast } from '../../../utils/toast';
 
-const STORE_PARTNERS = [
-  {
-    id: 'fresh-mart',
-    name: 'Fresh Mart Supermarket',
-    address: '12 Admiralty Road, Lekki Phase 1',
-    deliveryTime: '30-40 mins',
-    status: 'Accepting orders',
-  },
-  {
-    id: 'organics',
-    name: 'Green Organics',
-    address: '48 Adeola Odeku Street, Victoria Island',
-    deliveryTime: '20-35 mins',
-    status: 'High priority store',
-  },
-  {
-    id: 'pharmacy',
-    name: 'CityCare Pharmacy',
-    address: '7 Awolowo Road, Ikoyi',
-    deliveryTime: '25-30 mins',
-    status: '24/7 pickup available',
-  },
-  {
-    id: 'market',
-    name: 'Ajah Farmers Market',
-    address: 'Market Square, Ajah',
-    deliveryTime: '45-55 mins',
-    status: 'Morning restock pending',
-  },
-];
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US');
+};
 
-const INVENTORY_ALERTS = [
-  {
-    id: 'stock-low',
-    title: 'Low stock alert',
-    message: 'Golden Bread (700g) is running low at Fresh Mart. Offer premium wheat as substitute.',
-    icon: 'alert-circle-outline' as const,
-  },
-  {
-    id: 'new-arrival',
-    title: 'New arrival',
-    message: 'Organic strawberries now in stock at Green Organics. Promote during deliveries.',
-    icon: 'sparkles-outline' as const,
-  },
-];
+interface TaskItemProps {
+  title: string;
+  description: string;
+  dueDate: string;
+  actionText: string;
+  onAction: () => void;
+}
 
-export default function StoreScreen() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        data={STORE_PARTNERS}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Partner stores</Text>
-            <Text style={styles.subtitle}>Track inventory updates and preferred pickup windows.</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.storeCard}>
-            <View style={styles.storeIconWrapper}>
-              <Ionicons name="storefront-outline" size={22} color="#06888C" />
-            </View>
-            <View style={styles.storeDetails}>
-              <Text style={styles.storeName}>{item.name}</Text>
-              <Text style={styles.storeAddress}>{item.address}</Text>
-              <View style={styles.storeMetaRow}>
-                <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={14} color="#6B7280" />
-                  <Text style={styles.metaText}>{item.deliveryTime}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                  <Text style={styles.metaText}>{item.status}</Text>
-                </View>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
-        )}
-        ListFooterComponent={
-          <View style={styles.alertSection}>
-            <Text style={styles.sectionTitle}>Inventory alerts</Text>
-            {INVENTORY_ALERTS.map((alert) => (
-              <View key={alert.id} style={styles.alertCard}>
-                <View style={styles.alertIconWrapper}>
-                  <Ionicons name={alert.icon} size={18} color="#F59E0B" />
-                </View>
-                <View style={styles.alertDetails}>
-                  <Text style={styles.alertTitle}>{alert.title}</Text>
-                  <Text style={styles.alertMessage}>{alert.message}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+const TaskItem: React.FC<TaskItemProps> = ({
+  title,
+  description,
+  dueDate,
+  actionText,
+  onAction,
+}) => (
+  <View style={styles.taskCard}>
+    <View style={styles.taskContent}>
+      <View style={styles.taskInfo}>
+        <Text style={styles.taskTitle}>{title}</Text>
+        <Text style={styles.taskDescription}>{description}</Text>
+        <Text style={styles.taskDueDate}>{dueDate}</Text>
+      </View>
+      <Image
+        source={require('../../../assets/images/mail.png')}
+        style={styles.taskIcon}
+        resizeMode="contain"
       />
+    </View>
+    <View style={styles.divider} />
+    <Pressable onPress={onAction}>
+      <Text style={styles.actionText}>{actionText}</Text>
+    </Pressable>
+  </View>
+);
+
+interface Announcement {
+  id:            string   
+  title:         string
+  description:   string
+  imageUrl:      string
+  targetAudience: string[]
+  isActive:      boolean
+  sentAt:        string
+  createdAt:     string
+  updatedAt:     string
+}
+
+
+interface MessageItemProps {
+  announcement: Announcement;
+  isExpanded: boolean;
+  onPress: () => void;
+}
+
+const MessageItem: React.FC<MessageItemProps> = ({ announcement, isExpanded, onPress }) => (
+  <Pressable style={styles.messageItem} onPress={onPress}>
+    <View style={styles.messageContent}>
+      <Text style={[styles.messageTitle, styles.unreadMessageTitle]}>
+        {announcement.title || ''}
+      </Text>
+      <Text style={styles.messageDate}>{formatDate(announcement.createdAt!)}</Text>
+      <Text style={styles.messageDescription} numberOfLines={isExpanded ? undefined : 1}>
+        {announcement.description}
+      </Text>
+    </View>
+    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#333333" />
+  </Pressable>
+);
+
+const Inbox = () => {
+  const router = useRouter();
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedAnnouncementId, setExpandedAnnouncementId] = useState<string | null>(null);
+
+  const announcementApi = useMemo(() => new AnnouncementApi(apiConfig), []);
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        setLoading(true);
+        const response  = await announcementApi.announcementsGet();
+        setAnnouncements(response?.data || []);
+      } catch (error: any) {
+        toast.error('Failed to load messages.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnnouncements();
+  }, [announcementApi]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  const handleReviewDocuments = () => {
+    console.log('Review and sign documents');
+  };
+
+  const handleAnnouncementPress = (id: string) => {
+    if (expandedAnnouncementId === id) {
+      setExpandedAnnouncementId(null);
+    } else {
+      setExpandedAnnouncementId(id);
+    }
+  };
+
+  // const tasks: TaskItemProps[] = [
+  //   {
+  //     title: 'Updated shopper paperwork',
+  //     description: 'We updated our shopper paperwork. Please review and sign it to continue providing services.',
+  //     dueDate: 'Due 8/4/12',
+  //     actionText: 'Review and sign documents',
+  //     onAction: handleReviewDocuments,
+  //   },
+  // ];
+
+  // const messages: MessageItemProps[] = [
+  //   {
+  //     title: 'Important Alcohol Delivery Reminders',
+  //     date: '7/18/25',
+  //     isRead: true,
+  //   },
+  // ];
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Pressable style={styles.backButton} onPress={handleGoBack}>
+            <Ionicons name="chevron-back" size={24} color="#100A37" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Inbox</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <NotificationBell from="/inbox/inbox" />
+          {/* <Pressable style={styles.cartButton} onPress={handleCart}>
+            <ShoppingBasket width={20} height={20} stroke="#000" strokeWidth="0" />
+          </Pressable> */}
+        </View>
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Tasks Section */}
+        {/* <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tasks</Text>
+          {tasks.map((task, index) => (
+            <TaskItem key={`${task.title}-${task.dueDate}-${index}`} {...task} />
+          ))}
+        </View> */}
+
+        {/* Divider */}
+        {/* <View style={styles.sectionDivider} /> */}
+
+        {/* Messages Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Announcements</Text>
+          <View style={styles.messagesContainer}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#F48022" style={{ marginTop: 40 }} />
+            ) : announcements.length > 0 ? (
+              announcements.map((announcement, index) => (
+                <View key={announcement.id || index}>
+                  <MessageItem 
+                    announcement={announcement} 
+                    isExpanded={expandedAnnouncementId === announcement.id}
+                    onPress={() => handleAnnouncementPress(announcement.id)}
+                  />
+                  {index < announcements.length - 1 && <View style={styles.messageDivider} />}
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyMessageText}>You have no messages.</Text>
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 20,
-    backgroundColor: '#F3F4F6',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 21,
+    paddingTop: 20,
+    backgroundColor: '#FFF',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  storeCard: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    gap: 16,
+    gap: 12,
   },
-  storeIconWrapper: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#E8F5F6',
-    alignItems: 'center',
+  backButton: {
+    width: 30,
+    height: 30,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  storeDetails: {
-    flex: 1,
-    gap: 6,
-  },
-  storeName: {
-    fontSize: 16,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+    fontFamily: 'Raleway-Bold',
+    color: '#000',
   },
-  storeAddress: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  storeMetaRow: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 13,
   },
-  metaItem: {
-    flexDirection: 'row',
+  cartButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#B4BED4',
+    backgroundColor: 'transparent',
   },
-  metaText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
+  scrollView: {
+    flex: 1,
   },
-  alertSection: {
-    marginTop: 32,
-    gap: 16,
+  scrollContent: {
+    paddingBottom: 60,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 21,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    fontFamily: 'Raleway-Bold',
+    color: '#000',
+    lineHeight: 25,
+    marginBottom: 21,
   },
-  alertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+  taskCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FBBF24',
-    backgroundColor: '#FFFBEB',
-    gap: 14,
+    borderColor: '#B4BED4',
+    backgroundColor: '#FFF',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
-  alertIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
+  taskContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 25,
+    marginBottom: 14,
   },
-  alertDetails: {
+  taskInfo: {
     flex: 1,
-    gap: 4,
+    gap: 9,
   },
-  alertTitle: {
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'OpenSans-SemiBold',
+    color: '#000',
+    lineHeight: 16,
+  },
+  taskDescription: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'OpenSans-Regular',
+    color: '#000',
+    lineHeight: 20,
+  },
+  taskDueDate: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#92400E',
+    fontFamily: 'OpenSans-SemiBold',
+    color: '#979797',
   },
-  alertMessage: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#92400E',
+  taskIcon: {
+    width: 67,
+    height: 67,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#D9D9D9',
+    marginBottom: 10,
+  },
+  actionText: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Raleway-Bold',
+    color: '#01891C',
+    lineHeight: 16,
+  },
+  sectionDivider: {
+    width: '90%',
+    height: 1,
+    backgroundColor: 'rgba(180, 190, 212, 0.5)',
+    alignSelf: 'center',
+    marginVertical: 27,
+  },
+  messagesContainer: {
+    gap: 25,
+  },
+  messageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  messageContent: {
+    flex: 1,
+    paddingRight: 10,
+    gap: 2,
+  },
+  messageTitle: {
+    fontSize: 18,
+    fontWeight: '400',
+    fontFamily: 'OpenSans-Regular',
+    color: '#555454ff',
+    lineHeight: 25,
+  },
+  unreadMessageTitle: {
+    fontWeight: '700',
+    fontFamily: 'OpenSans-SemiBold',
+  },
+  messageDate: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'OpenSans-Regular',
+    color: '#000',
+    lineHeight: 25,
+  },
+  messageDescription: {
+    fontSize: 14,
+    fontFamily: 'OpenSans-Regular',
+    color: '#7C7B7B',
+    lineHeight: 20,
+  },
+  messageDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: 'rgba(180, 190, 212, 0.5)',
+    marginTop: 25,
+  },
+  emptyMessageText: {
+    textAlign: 'center',
+    color: '#7C7B7B',
+    marginTop: 40,
+    fontFamily: 'OpenSans-Regular',
   },
 });
+
+export default Inbox;

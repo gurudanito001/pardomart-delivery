@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   link: {
-    color: '#06888C',
+    color: '#0085FF',
   },
 });
 

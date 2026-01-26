@@ -2,7 +2,7 @@
 
 # PardoMart API Client Generation Script (Unix/Linux/macOS)
 # This script generates a TypeScript Axios API client from the OpenAPI specification.
-# Output structure (inside `api-client`):
+# Output structure (inside `api`):
 #   - `endpoints/`  : Axios API classes (e.g. AuthApi, ProductApi, EarningsApi)
 #   - `models/`     : TypeScript models/types (e.g. User, Product, Order)
 #   - `api.ts`      : Combined export surface (re-exporting endpoints & models)
@@ -11,7 +11,7 @@
 echo "🚀 Generating PardoMart API Client..."
 
 API_SPEC_URL="https://pardomart-node-api-vaje.onrender.com/api-docs/openapi.json"
-OUTPUT_DIR="./api-client"
+OUTPUT_DIR="./api"
 
 # Clean only generated files, preserve custom configuration
 echo "Cleaning generated API files (preserving config.ts)..."
@@ -57,8 +57,8 @@ if [ $? -eq 0 ]; then
     echo "Custom configuration preserved:"
     echo "   - config.ts (API configuration & token management)"
     echo ""
-    echo "You can import APIs from 'api-client/endpoints' (e.g., AuthApi, ProductApi)"
-    echo "You can import types from 'api-client/models' (e.g., User, Product)"
+    echo "You can import APIs from 'api/endpoints' (e.g., AuthApi, ProductApi)"
+    echo "You can import types from 'api/models' (e.g., User, Product)"
 else
     echo "❌ API client generation failed!"
     exit 1

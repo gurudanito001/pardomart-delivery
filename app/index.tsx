@@ -1,12 +1,12 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Role } from '@/api';
-import { router, useSegments } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import SplashScreen from '../components/splashScreen';
 
 const Index = () => {
   const { state } = useAuth();
   const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
     console.log('Auth State:', state);
@@ -23,7 +23,7 @@ const Index = () => {
         router.replace('/go-online');
       }
     }
-  }, [state.isReady, state.isAuthenticated, state.isRegistered, segments]);
+  }, [state.isReady, state.isAuthenticated, state.isRegistered, segments, router]);
 
   return (
     <SplashScreen />

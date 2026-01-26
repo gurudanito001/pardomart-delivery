@@ -1,4 +1,3 @@
-import { Role } from '@/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppProvider, useAuth } from '@/contexts/AppProvider';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -6,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -33,7 +32,11 @@ function RootLayout() {
 
     if (state.isAuthenticated) {
       if (!inAppGroup) {  // For 'vendor' and any other roles
-        router.replace('/(private)/home');
+        if (state.user?.online) {
+          router.replace('/(private)/home');
+        } else {
+          router.replace('/(private)/home/go-online');
+        }
       }
     } else if (!state.isAuthenticated && inAppGroup) {
       // If the user is not authenticated and is trying to access a private screen,
@@ -46,7 +49,7 @@ function RootLayout() {
       SplashScreen.hideAsync();
     }
 
-  }, [state.isReady, state.isAuthenticated, segments, router, state]);
+  }, [state.isReady, state.isAuthenticated, segments, router]);
 
   // Render nothing until the auth state is determined and redirection is complete.
   // This prevents a flash of the wrong screen.
@@ -68,8 +71,6 @@ export default function AppLayout() {
     "Raleway-SemiBold": require("../assets/fonts/Raleway-SemiBold.ttf"),
     "Raleway-Regular": require("../assets/fonts/Raleway-Regular.ttf"),
   });
-
-
 
   if (!loaded) {
     return null;

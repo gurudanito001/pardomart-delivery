@@ -42,6 +42,8 @@ import type { Order } from '../models';
 // @ts-ignore
 import type { OrderAdminOverviewGet200Response } from '../models';
 // @ts-ignore
+import type { OrderDeliveryAvailableGet200Response } from '../models';
+// @ts-ignore
 import type { OrderIdVerifyPickupPostRequest } from '../models';
 // @ts-ignore
 import type { OrderItemWithRelations } from '../models';
@@ -300,6 +302,84 @@ export const OrderApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
+         * Retrieves a list of unassigned orders that require a delivery person. - If shopping is by vendor, order must be `ready_for_delivery`. - If shopping is by delivery person, order is available immediately or 30 mins before scheduled time. 
+         * @summary Get available orders for delivery persons
+         * @param {number} [page] Page number for pagination.
+         * @param {number} [size] Number of items per page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderDeliveryAvailableGet: async (page?: number, size?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/order/delivery/available`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (size !== undefined) {
+                localVarQueryParameter['size'] = size;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get orders assigned to the authenticated delivery person
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderDeliveryMeGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/order/delivery/me`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary Get available delivery time slots
          * @param {string} vendorId The ID of the vendor.
@@ -511,6 +591,44 @@ export const OrderApiAxiosParamCreator = function (configuration?: Configuration
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(orderIdVerifyPickupPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Allows a delivery person to accept an available order.
+         * @summary Accept an order for delivery (Delivery Person)
+         * @param {string} orderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderOrderIdAcceptDeliveryPatch: async (orderId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orderId' is not null or undefined
+            assertParamExists('orderOrderIdAcceptDeliveryPatch', 'orderId', orderId)
+            const localVarPath = `/order/{orderId}/accept-delivery`
+                .replace(`{${"orderId"}}`, encodeURIComponent(String(orderId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1215,6 +1333,32 @@ export const OrderApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Retrieves a list of unassigned orders that require a delivery person. - If shopping is by vendor, order must be `ready_for_delivery`. - If shopping is by delivery person, order is available immediately or 30 mins before scheduled time. 
+         * @summary Get available orders for delivery persons
+         * @param {number} [page] Page number for pagination.
+         * @param {number} [size] Number of items per page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async orderDeliveryAvailableGet(page?: number, size?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<OrderDeliveryAvailableGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.orderDeliveryAvailableGet(page, size, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['OrderApi.orderDeliveryAvailableGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get orders assigned to the authenticated delivery person
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async orderDeliveryMeGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<VendorOrder>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.orderDeliveryMeGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['OrderApi.orderDeliveryMeGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary Get available delivery time slots
          * @param {string} vendorId The ID of the vendor.
@@ -1281,6 +1425,19 @@ export const OrderApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest, id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['OrderApi.orderIdVerifyPickupPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Allows a delivery person to accept an available order.
+         * @summary Accept an order for delivery (Delivery Person)
+         * @param {string} orderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async orderOrderIdAcceptDeliveryPatch(orderId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.orderOrderIdAcceptDeliveryPatch(orderId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['OrderApi.orderOrderIdAcceptDeliveryPatch']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1552,6 +1709,26 @@ export const OrderApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.orderAdminOverviewGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * Retrieves a list of unassigned orders that require a delivery person. - If shopping is by vendor, order must be `ready_for_delivery`. - If shopping is by delivery person, order is available immediately or 30 mins before scheduled time. 
+         * @summary Get available orders for delivery persons
+         * @param {number} [page] Page number for pagination.
+         * @param {number} [size] Number of items per page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderDeliveryAvailableGet(page?: number, size?: number, options?: RawAxiosRequestConfig): AxiosPromise<OrderDeliveryAvailableGet200Response> {
+            return localVarFp.orderDeliveryAvailableGet(page, size, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get orders assigned to the authenticated delivery person
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderDeliveryMeGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<VendorOrder>> {
+            return localVarFp.orderDeliveryMeGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * 
          * @summary Get available delivery time slots
          * @param {string} vendorId The ID of the vendor.
@@ -1604,6 +1781,16 @@ export const OrderApiFactory = function (configuration?: Configuration, basePath
          */
         orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest: OrderIdVerifyPickupPostRequest, id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest, id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Allows a delivery person to accept an available order.
+         * @summary Accept an order for delivery (Delivery Person)
+         * @param {string} orderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        orderOrderIdAcceptDeliveryPatch(orderId: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.orderOrderIdAcceptDeliveryPatch(orderId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1832,6 +2019,28 @@ export class OrderApi extends BaseAPI {
     }
 
     /**
+     * Retrieves a list of unassigned orders that require a delivery person. - If shopping is by vendor, order must be `ready_for_delivery`. - If shopping is by delivery person, order is available immediately or 30 mins before scheduled time. 
+     * @summary Get available orders for delivery persons
+     * @param {number} [page] Page number for pagination.
+     * @param {number} [size] Number of items per page.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public orderDeliveryAvailableGet(page?: number, size?: number, options?: RawAxiosRequestConfig) {
+        return OrderApiFp(this.configuration).orderDeliveryAvailableGet(page, size, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get orders assigned to the authenticated delivery person
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public orderDeliveryMeGet(options?: RawAxiosRequestConfig) {
+        return OrderApiFp(this.configuration).orderDeliveryMeGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 
      * @summary Get available delivery time slots
      * @param {string} vendorId The ID of the vendor.
@@ -1888,6 +2097,17 @@ export class OrderApi extends BaseAPI {
      */
     public orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest: OrderIdVerifyPickupPostRequest, id: string, options?: RawAxiosRequestConfig) {
         return OrderApiFp(this.configuration).orderIdVerifyPickupPost(orderIdVerifyPickupPostRequest, id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Allows a delivery person to accept an available order.
+     * @summary Accept an order for delivery (Delivery Person)
+     * @param {string} orderId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public orderOrderIdAcceptDeliveryPatch(orderId: string, options?: RawAxiosRequestConfig) {
+        return OrderApiFp(this.configuration).orderOrderIdAcceptDeliveryPatch(orderId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

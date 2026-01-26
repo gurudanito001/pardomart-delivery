@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   
   // States
   focused: {
-    borderColor: '#06888C',
+    borderColor: '#0085FF',
   },
   error: {
     borderColor: '#FF4444',

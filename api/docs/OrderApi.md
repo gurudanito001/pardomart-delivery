@@ -9,11 +9,14 @@ All URIs are relative to *http://localhost:5000/api/v1*
 |[**orderAdminOrderIdMessagesGet**](#orderadminorderidmessagesget) | **GET** /order/admin/{orderId}/messages | Get all messages for an order (Admin)|
 |[**orderAdminOrderIdPatch**](#orderadminorderidpatch) | **PATCH** /order/admin/{orderId} | Update an order\&#39;s details (Admin)|
 |[**orderAdminOverviewGet**](#orderadminoverviewget) | **GET** /order/admin/overview | Get platform-wide order overview data (Admin)|
+|[**orderDeliveryAvailableGet**](#orderdeliveryavailableget) | **GET** /order/delivery/available | Get available orders for delivery persons|
+|[**orderDeliveryMeGet**](#orderdeliverymeget) | **GET** /order/delivery/me | Get orders assigned to the authenticated delivery person|
 |[**orderDeliverySlotsGet**](#orderdeliveryslotsget) | **GET** /order/delivery-slots | Get available delivery time slots|
 |[**orderIdGet**](#orderidget) | **GET** /order/{id} | Get an order by its ID|
 |[**orderIdPatch**](#orderidpatch) | **PATCH** /order/{id} | Update an order|
 |[**orderIdStatusPatch**](#orderidstatuspatch) | **PATCH** /order/{id}/status | Update the status of an order|
 |[**orderIdVerifyPickupPost**](#orderidverifypickuppost) | **POST** /order/{id}/verify-pickup | Verify order pickup with an OTP|
+|[**orderOrderIdAcceptDeliveryPatch**](#orderorderidacceptdeliverypatch) | **PATCH** /order/{orderId}/accept-delivery | Accept an order for delivery (Delivery Person)|
 |[**orderOrderIdAcceptPatch**](#orderorderidacceptpatch) | **PATCH** /order/{orderId}/accept | Accept a pending order|
 |[**orderOrderIdDeclinePatch**](#orderorderiddeclinepatch) | **PATCH** /order/{orderId}/decline | Decline a pending order|
 |[**orderOrderIdItemsItemIdRespondToReplacementPatch**](#orderorderiditemsitemidrespondtoreplacementpatch) | **PATCH** /order/{orderId}/items/{itemId}/respond-to-replacement | Respond to a suggested item replacement|
@@ -307,6 +310,103 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **orderDeliveryAvailableGet**
+> OrderDeliveryAvailableGet200Response orderDeliveryAvailableGet()
+
+Retrieves a list of unassigned orders that require a delivery person. - If shopping is by vendor, order must be `ready_for_delivery`. - If shopping is by delivery person, order is available immediately or 30 mins before scheduled time. 
+
+### Example
+
+```typescript
+import {
+    OrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new OrderApi(configuration);
+
+let page: number; //Page number for pagination. (optional) (default to 1)
+let size: number; //Number of items per page. (optional) (default to 20)
+
+const { status, data } = await apiInstance.orderDeliveryAvailableGet(
+    page,
+    size
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **page** | [**number**] | Page number for pagination. | (optional) defaults to 1|
+| **size** | [**number**] | Number of items per page. | (optional) defaults to 20|
+
+
+### Return type
+
+**OrderDeliveryAvailableGet200Response**
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | A paginated list of available orders. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **orderDeliveryMeGet**
+> Array<VendorOrder> orderDeliveryMeGet()
+
+
+### Example
+
+```typescript
+import {
+    OrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new OrderApi(configuration);
+
+const { status, data } = await apiInstance.orderDeliveryMeGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**Array<VendorOrder>**
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | A list of orders assigned to the delivery person. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **orderDeliverySlotsGet**
 > Array<DeliverySlot> orderDeliverySlotsGet()
 
@@ -578,6 +678,58 @@ void (empty response body)
 |**400** | Invalid OTP or order not in a verifiable state. |  -  |
 |**403** | User not authorized to perform this action. |  -  |
 |**404** | Order not found. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **orderOrderIdAcceptDeliveryPatch**
+> orderOrderIdAcceptDeliveryPatch()
+
+Allows a delivery person to accept an available order.
+
+### Example
+
+```typescript
+import {
+    OrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new OrderApi(configuration);
+
+let orderId: string; // (default to undefined)
+
+const { status, data } = await apiInstance.orderOrderIdAcceptDeliveryPatch(
+    orderId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **orderId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Order accepted successfully. |  -  |
+|**409** | Conflict (order already assigned). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

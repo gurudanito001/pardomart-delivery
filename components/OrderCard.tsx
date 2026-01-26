@@ -14,7 +14,8 @@ import {
 } from './icons';
 import Svg, { Path } from 'react-native-svg';
 
-interface OrderCardProps {
+export interface OrderCardProps {
+  id?: string;
   type: 'shop-deliver' | 'deliver';
   total: string;
   customerName: string;

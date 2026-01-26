@@ -1,4 +1,7 @@
-import React from "react";
+import { useAuth } from "@/contexts/AppProvider";
+import { useUser } from "@/hooks/api/useUser";
+import { Redirect, router } from "expo-router";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,8 +10,10 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+  StatusBar,
 } from "react-native";
-import { router } from "expo-router";
 import {
   NotificationSVG,
   SupportSVG,
@@ -16,51 +21,77 @@ import {
   OrdersIconSVG,
 } from "../../../components/icons";
 import { MenuButton } from "../../../components/MenuButton";
-import OrderCard from "../../../components/OrderCard";
+import OrderCard, { OrderCardProps } from "../../../components/OrderCard";
+import { toast } from "sonner-native";
+import { useQuery } from "@tanstack/react-query";
+import { OrderApi } from "../../../api/endpoints/order-api";
+import { apiConfig } from "../../../api/config";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const ORDERS_DATA = [
-  {
-    id: "1",
-    type: "shop-deliver" as const,
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-  },
-  {
-    id: "2",
-    type: "deliver" as const,
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-  },
-  {
-    id: "3",
-    type: "shop-deliver" as const,
-    total: "$30.22",
-    customerName: "Mr Damilare Adebanjo",
-    time: "12:00pm",
-    date: "03/2025",
-    units: "20 units",
-  },
-];
-
 export default function HomeScreen() {
-  const handleGoOffline = () => {
-    console.log("Go offline pressed");
+  const { state: { user } } = useAuth();
+  const { updateProfile, loading } = useUser();
+  
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const { data: availableOrdersData, isLoading: isOrdersLoading, refetch } = useQuery({
+    queryKey: ['orders', 'available'],
+    queryFn: async () => {
+      const response = await orderApi.orderDeliveryAvailableGet();
+      return response.data;
+    },
+    enabled: !!user?.online,
+    refetchInterval: 15000,
+  });
+
+  const orders = useMemo(() => {
+    const rawItems = (availableOrdersData as any)?.data || (availableOrdersData as any)?.items || (Array.isArray(availableOrdersData) ? availableOrdersData : []);
+    
+    return rawItems.map((order: any) => ({
+      id: order.id,
+      type: (order.shoppingMethod === 'delivery_person' ? 'shop-deliver' : 'deliver') as "shop-deliver" | "deliver",
+      total: `$${Number(order.totalAmount || 0).toFixed(2)}`,
+      customerName: order.customerName || order.user?.name || 'Customer',
+      time: (order.createdAt || order.scheduledDeliveryTime) ? new Date(order.createdAt || order.scheduledDeliveryTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase() : '',
+      date: (order.createdAt || order.scheduledDeliveryTime) ? new Date(order.createdAt || order.scheduledDeliveryTime).toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' }) : '',
+      units: order.numberOfOrderItems ? `${order.numberOfOrderItems} units` : `${order.items?.length || 0} units`,
+    }));
+  }, [availableOrdersData]);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  if (user && !user.online) {
+    return <Redirect href="/(private)/home/go-online" />;
+  }
+
+  const handleGoOffline = async () => {
+    try {
+      await updateProfile({ online: false });
+      toast.success("You are now offline");
+    } catch (error: any) {
+      console.error("Failed to go offline:", error);
+      toast.error(error?.message || "Failed to go offline");
+    }
   };
 
-  const handlePreviewOrder = () => {
-    router.push("/(private)/orders/order-preview");
+  const handlePreviewOrder = (orderId: string) => {
+    router.push({
+      pathname: "/(private)/orders/order-preview",
+      params: { id: orderId }
+    });
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       {/* World Map Background */}
       <Image
         source={{
@@ -72,7 +103,6 @@ export default function HomeScreen() {
 
       {/* Header with Menu and Icons */}
       <View style={styles.header}>
-        <MenuButton />
 
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
@@ -93,11 +123,18 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.goOfflineButton}
           onPress={handleGoOffline}
+          disabled={loading}
         >
-          <View style={styles.offlineIconContainer}>
-            <DoubleArrowSVG width={19} height={20} color="#FFF" />
-          </View>
-          <Text style={styles.goOfflineText}>Go Offline</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              {/* <View style={styles.offlineIconContainer}>
+                <DoubleArrowSVG width={19} height={20} color="#FFF" />
+              </View> */}
+              <Text style={styles.goOfflineText}>Go Offline</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         {/* My Orders Section */}
@@ -105,9 +142,9 @@ export default function HomeScreen() {
           <View style={styles.myOrdersContent}>
             <View style={styles.myOrdersLeft}>
               <OrdersIconSVG width={24} height={24} color="#000" />
-              <Text style={styles.myOrdersText}>My Orders</Text>
+              <Text style={styles.myOrdersText}>Available Orders</Text>
             </View>
-            <Text style={styles.ordersCount}>3 Orders</Text>
+            <Text style={styles.ordersCount}>{orders.length} Orders</Text>
           </View>
         </View>
 
@@ -116,22 +153,31 @@ export default function HomeScreen() {
           style={styles.ordersList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.ordersContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0085FF" colors={["#0085FF"]} />
+          }
         >
-          {ORDERS_DATA.map((order) => (
-            <OrderCard
-              key={order.id}
-              type={order.type}
-              total={order.total}
-              customerName={order.customerName}
-              time={order.time}
-              date={order.date}
-              units={order.units}
-              onPreviewOrder={handlePreviewOrder}
-            />
-          ))}
+          {isOrdersLoading ? (
+            <ActivityIndicator size="large" color="#0085FF" style={{ marginTop: 20 }} />
+          ) : orders.length === 0 ? (
+            <Text style={{ textAlign: 'center', marginTop: 20, color: '#7C8BA0' }}>No available orders found.</Text>
+          ) : (
+            orders.map((order: OrderCardProps) => (
+              <OrderCard
+                key={order.id}
+                type={order.type}
+                total={order.total}
+                customerName={order.customerName}
+                time={order.time}
+                date={order.date}
+                units={order.units}
+                onPreviewOrder={() => handlePreviewOrder(order.id!)}
+              />
+            ))
+          )}
         </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -149,12 +195,12 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 21,
     paddingTop: 20,
     position: "absolute",
-    top: 0,
+    top: 15,
     left: 0,
     right: 0,
     zIndex: 10,
@@ -176,7 +222,7 @@ const styles = StyleSheet.create({
   headerIcons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 10
   },
   iconButton: {
     width: 40,

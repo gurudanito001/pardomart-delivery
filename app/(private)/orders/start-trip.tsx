@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,23 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   MenuButton,
   NotificationSVG,
   SupportSVG,
-  NavigationRouteSVG,
-  RouteStartMarker,
   RouteEndMarker,
+  DeliveryMap,
+  LiveTrackingStats,
 } from '../../../components';
 import Svg, { Path, Rect } from 'react-native-svg';
+import * as Location from 'expo-location';
+import { useQuery } from '@tanstack/react-query';
+import { OrderApi } from '../../../api/endpoints/order-api';
+import { apiConfig } from '../../../api/config';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -149,8 +155,137 @@ const ImportantIcon = () => (
   </Svg>
 );
 
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI / 180);
+}
+
 export default function StartTripScreen() {
+  const { id } = useLocalSearchParams() as { id: string };
   const [showMapModal, setShowMapModal] = useState(false);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>('Locating...');
+  const [liveDistance, setLiveDistance] = useState<string | null>(null);
+  const [estimatedTime, setEstimatedTime] = useState<string | null>(null);
+  const [currentSpeed, setCurrentSpeed] = useState<string | null>(null);
+
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const { data: order, isLoading } = useQuery({
+    queryKey: ['order', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await orderApi.orderIdGet(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription | null = null;
+
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        return;
+      }
+
+      // Initial location
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation);
+      updateLocationInfo(currentLocation);
+
+      // Watch location
+      subscription = await Location.watchPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeInterval: 5000,
+        distanceInterval: 10
+      }, (newLoc) => {
+        setLocation(newLoc);
+        updateLocationInfo(newLoc);
+      });
+    })();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, [order]);
+
+  const updateLocationInfo = async (loc: Location.LocationObject) => {
+    // Reverse Geocode
+    try {
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude
+      });
+      if (address) {
+        const addrStr = [address.street, address.city, address.region].filter(Boolean).join(', ');
+        setCurrentAddress(addrStr || 'Current Location');
+      }
+    } catch (e) {
+      console.log('Reverse geocoding failed', e);
+    }
+
+    // Calculate Distance & ETA
+    if (order?.vendor?.latitude && order?.vendor?.longitude) {
+      const lat = typeof order.vendor.latitude === 'string' ? parseFloat(order.vendor.latitude) : order.vendor.latitude;
+      const lng = typeof order.vendor.longitude === 'string' ? parseFloat(order.vendor.longitude) : order.vendor.longitude;
+      const distKm = getDistanceFromLatLonInKm(
+        loc.coords.latitude,
+        loc.coords.longitude,
+        lat,
+        lng
+      );
+      const distMiles = distKm * 0.621371;
+      setLiveDistance(`${distMiles.toFixed(1)} mi`);
+
+      // Calculate estimated time based on distance and average speed (40 km/h)
+      const avgSpeed = 40; // km/h
+      const timeInHours = distKm / avgSpeed;
+      const timeInMinutes = Math.round(timeInHours * 60);
+      
+      if (timeInMinutes < 1) {
+        setEstimatedTime('< 1 min');
+      } else if (timeInMinutes < 60) {
+        setEstimatedTime(`${timeInMinutes} min`);
+      } else {
+        const hours = Math.floor(timeInMinutes / 60);
+        const minutes = timeInMinutes % 60;
+        setEstimatedTime(`${hours}h ${minutes}m`);
+      }
+    }
+
+    // Calculate current speed if available
+    if (loc.coords.speed !== null && loc.coords.speed !== undefined) {
+      // Speed is in m/s, convert to km/h
+      const speedKmh = loc.coords.speed * 3.6;
+      const speedMph = speedKmh * 0.621371;
+      setCurrentSpeed(`${speedMph.toFixed(1)} mph`);
+    }
+  };
+
+
+  const handleNavigate = () => {
+    if (order && order.vendor?.latitude && order.vendor?.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${order.vendor.latitude},${order.vendor.longitude}&travelmode=driving`;
+      Linking.openURL(url);
+    }
+  };
 
   const handleStartTrip = () => {
     setShowMapModal(true);
@@ -169,39 +304,50 @@ export default function StartTripScreen() {
   };
 
   const handleMapSelection = (mapType: 'google' | 'inapp') => {
-    console.log('Selected map:', mapType);
+    if (mapType === 'google' && order && order.vendor?.latitude && order.vendor?.longitude) {
+      // Open Google Maps with the destination
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${order.vendor.latitude},${order.vendor.longitude}&travelmode=driving`;
+      Linking.openURL(url);
+    }
     setShowMapModal(false);
   };
+
+  const handleCall = (phoneNumber?: string) => {
+    if (phoneNumber) {
+      Linking.openURL(`tel:${phoneNumber}`);
+    }
+  };
+
+  if (isLoading || !order) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#0085FF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <ImageBackground
-          source={{
-            uri: 'https://api.builder.io/api/v1/image/assets/TEMP/f1d48e4287a613755f3318b4416005431e184595?width=856',
-          }}
-          style={styles.mapBackground}
-          imageStyle={styles.mapImage}
-          resizeMode="cover"
-        >
-          <View style={styles.routeVisualization}>
-            <View style={styles.routePath}>
-              <NavigationRouteSVG />
-            </View>
-            <View style={styles.startMarker}>
-              <RouteStartMarker />
-            </View>
-            <View style={styles.endMarker}>
-              <RouteEndMarker />
-            </View>
-          </View>
+        <DeliveryMap
+          currentLocation={location}
+          destinationLat={order && order.vendor?.latitude ? typeof order.vendor.latitude === 'string' ? parseFloat(order.vendor.latitude) : order.vendor.latitude : undefined}
+          destinationLng={order && order.vendor?.longitude ? typeof order.vendor.longitude === 'string' ? parseFloat(order.vendor.longitude) : order.vendor.longitude : undefined}
+          destinationName={order?.vendor?.name || 'Store'}
+          currentLocationName={currentAddress}
+          isTracking={true}
+        />
 
-          <View style={styles.originLabel}>
-            <Text style={styles.originLabelText}>Jewel Osco</Text>
-          </View>
-          <View style={styles.destinationLabel}>
-            <Text style={styles.destinationLabelText}>Wes Town</Text>
-          </View>
+        {/* Live Tracking Stats Widget */}
+        <LiveTrackingStats
+          distance={liveDistance || undefined}
+          estimatedTime={estimatedTime || undefined}
+          speed={currentSpeed || undefined}
+          isActive={true}
+        />
+
+        {/* Overlay Header */}
+        <View style={styles.overlayHeaderContainer}>
 
           <SafeAreaView style={styles.headerSafeArea}>
             <View style={styles.header}>
@@ -216,7 +362,7 @@ export default function StartTripScreen() {
               </View>
             </View>
           </SafeAreaView>
-        </ImageBackground>
+        </View>
       </View>
 
       <View style={styles.bottomCard}>
@@ -226,7 +372,7 @@ export default function StartTripScreen() {
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
             <BackArrowIcon />
           </TouchableOpacity>
-          <Text style={styles.orderTitle}>Order KTh543Ju</Text>
+          <Text style={styles.orderTitle}>Order {order.id?.slice(0, 8).toUpperCase() || 'N/A'}</Text>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <CloseIcon />
           </TouchableOpacity>
@@ -240,47 +386,47 @@ export default function StartTripScreen() {
           <View style={styles.storeCard}>
             <View style={styles.storeInfo}>
               <Image
-                source={{
-                  uri: 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66',
-                }}
+                source={{ uri: order.vendor?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66' }}
                 style={styles.storeLogo}
               />
               <View style={styles.storeDetails}>
-                <Text style={styles.storeName}>Jewel Osco</Text>
-                <Text style={styles.storeAddress}>Wesside 120 ny jersey 2.5 Miles</Text>
+                <Text style={styles.storeName}>{order.vendor?.name || 'Store Name'}</Text>
+                <Text style={styles.storeAddress}>{order.vendor?.address || 'Store Address'}</Text>
               </View>
             </View>
             <View style={styles.contactIcons}>
               <MessageIcon />
-              <PhoneIcon />
+              <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber || undefined)}>
+                <PhoneIcon />
+              </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.customerCard}>
             <View style={styles.customerInfo}>
               <Image
-                source={{
-                  uri: 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60',
-                }}
+                source={{ uri: order.user?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60' }}
                 style={styles.customerAvatar}
               />
-              <Text style={styles.customerName}>Mr Damilare Adebanjo</Text>
+              <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
             </View>
             <View style={styles.contactIcons}>
               <MessageIcon />
-              <PhoneIcon />
+              <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber || undefined)}>
+                <PhoneIcon />
+              </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.deliveryCard}>
+          {/* <View style={styles.deliveryCard}>
             <View style={styles.importantIconContainer}>
               <ImportantIcon />
             </View>
             <View style={styles.deliveryInfo}>
               <Text style={styles.deliveryLabel}>Delivery Instruction</Text>
-              <Text style={styles.deliveryText}>Hand over to customer before you leave</Text>
+              <Text style={styles.deliveryText}>{order.deliveryInstructions || 'No special instructions'}</Text>
             </View>
-          </View>
+          </View> */}
 
           <View style={styles.routeContainer}>
             <View style={styles.routeTimelineContainer}>
@@ -289,32 +435,32 @@ export default function StartTripScreen() {
             <View style={styles.routeDetails}>
               <View style={styles.routeSection}>
                 <View style={styles.locationInfo}>
-                  <Text style={styles.locationTitle}>Jewel Osco Store</Text>
+                  <Text style={styles.locationTitle}>{order.vendor?.name || 'Store'}</Text>
                   <Text style={styles.locationAddress}>
-                    Chicago Illinious, 60612, United states
+                    {order.vendor?.address || 'Store Address'}
                   </Text>
                 </View>
-                <View style={styles.navigateButton}>
+                <TouchableOpacity onPress={handleNavigate} style={styles.navigateButton}>
                   <NavigateIcon />
                   <Text style={styles.navigateText}>Navigate</Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.distanceSection}>
                 <Text style={styles.distanceLabel}>Distance</Text>
-                <Text style={styles.distanceValue}>4.5km</Text>
+                <Text style={styles.distanceValue}>{liveDistance || (order.vendor?.distance ? `${order.vendor.distance} Miles` : '0 Miles')}</Text>
               </View>
 
               <View style={styles.destinationSection}>
-                <Text style={styles.destinationText}>Bellaire Town</Text>
+                <Text style={styles.destinationText}>{currentAddress}</Text>
               </View>
             </View>
           </View>
 
           <TouchableOpacity style={styles.startTripButton} onPress={handleStartTrip}>
-            <View style={styles.buttonIcon}>
+            {/* <View style={styles.buttonIcon}>
               <DoubleChevronIcon />
-            </View>
+            </View> */}
             <Text style={styles.startTripText}>Start Trip</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -376,11 +522,6 @@ const styles = StyleSheet.create({
     height: 1100,
     zIndex: 0,
   },
-  mapBackground: {
-    flex: 1,
-    position: 'relative',
-    justifyContent: 'flex-start',
-  },
   mapImage: {
     width: '100%',
     height: '100%',
@@ -408,60 +549,15 @@ const styles = StyleSheet.create({
     bottom: 47,
     right: 3,
   },
-  originLabel: {
-    position: 'absolute',
-    top: 100,
-    left: 73,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 11,
-    paddingVertical: 3,
-    borderRadius: 33.071,
-    borderWidth: 1,
-    borderColor: '#F9F9F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2.281 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6.842,
-    elevation: 2,
-    transform: [{ rotate: '3.5deg' }],
-  },
-  destinationLabel: {
-    position: 'absolute',
-    top: 352,
-    zIndex: -1,
-    left: 230,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 11,
-    paddingVertical: 3,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#F9F9F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2.281 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6.842,
-    elevation: 2,
-    transform: [{ rotate: '3.5deg' }],
-  },
-  originLabelText: {
-    color: '#454545',
-    fontFamily: 'Poppins',
-    fontSize: 12.544,
-    fontWeight: '400',
-    letterSpacing: 0.376,
-  },
-  destinationLabelText: {
-    color: '#454545',
-    fontFamily: 'Open Sans',
-    fontSize: 11,
-    fontWeight: '400',
-    letterSpacing: 0.33,
-  },
-  headerSafeArea: {
+  overlayHeaderContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    zIndex: 10,
+  },
+  headerSafeArea: {
+    width: '100%',
   },
   header: {
     flexDirection: 'row',

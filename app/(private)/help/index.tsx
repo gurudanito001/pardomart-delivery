@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ScrollView,
-  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { NotificationSVG } from "@/components/icons/NotificationSVG";
@@ -14,18 +19,77 @@ import { SupportSVG } from "@/components/icons/SupportSVG";
 import { DownArrowIconSVG } from "@/components/icons/DownArrowIconSVG";
 import { AttachmentIconSVG } from "@/components/icons/AttachmentIconSVG";
 import { ArrowBackSVG } from "@/components";
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from 'sonner-native';
+import { apiConfig } from '../../../api/config';
+import { SupportApi } from '../../../api/endpoints/support-api';
+import { CreateSupportTicketPayload, TicketCategory } from '../../../api/models';
 
 export default function HelpScreen() {
-  const [subject, setSubject] = useState("");
-  const [topic, setTopic] = useState("");
-  const [message, setMessage] = useState("");
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<TicketCategory | null>(null);
+  const [description, setDescription] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [base64Image, setBase64Image] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAttachment = () => {
-    console.log("Attachment pressed");
+  const supportApi = useMemo(() => new SupportApi(apiConfig), []);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+      setBase64Image(result.assets[0].base64 || null);
+    }
   };
 
-  const handleSend = () => {
-    console.log("Send pressed", { subject, topic, message });
+  const handleSend = async () => {
+    if (!title.trim()) {
+      toast.error("Please enter a title");
+      return;
+    }
+    if (!category) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (!description.trim()) {
+      toast.error("Please enter a description");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const payload: CreateSupportTicketPayload = {
+        title,
+        description,
+        category,
+        imageUrl: base64Image ? `data:image/jpeg;base64,${base64Image}` : undefined,
+      };
+      
+      await supportApi.supportTicketsPost(payload);
+      toast.success("Ticket submitted successfully");
+      setTitle("");
+      setCategory(null);
+      setDescription("");
+      setSelectedImage(null);
+      setBase64Image(null);
+      router.back();
+    } catch (error: any) {
+      console.error("Failed to submit ticket:", error);
+      const message = error?.response?.data?.message || error?.message || "Failed to submit ticket";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -34,8 +98,13 @@ export default function HelpScreen() {
     }
   };
 
+  const formatCategory = (cat: string) => {
+    return cat.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -67,59 +136,94 @@ export default function HelpScreen() {
 
         <View style={styles.formSection}>
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Subject</Text>
+            <Text style={styles.label}>Title</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Enter subject"
+                placeholder="Enter title"
                 placeholderTextColor="#7C8BA0"
-                value={subject}
-                onChangeText={setSubject}
+                value={title}
+                onChangeText={setTitle}
               />
             </View>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Topic</Text>
-            <TouchableOpacity style={styles.inputContainer}>
+            <Text style={styles.label}>Category</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={() => setModalVisible(true)}>
               <Text style={[styles.input, styles.selectText]}>
-                {topic || "select"}
+                {category ? formatCategory(category) : "Select category"}
               </Text>
               <DownArrowIconSVG width={16} height={16} color="black" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Message</Text>
+            <Text style={styles.label}>Description</Text>
             <View style={[styles.inputContainer, styles.messageContainer]}>
               <TextInput
                 style={[styles.input, styles.messageInput]}
-                placeholder="Add your message here..."
+                placeholder="Describe your issue..."
                 placeholderTextColor="#7C8BA0"
-                value={message}
-                onChangeText={setMessage}
+                value={description}
+                onChangeText={setDescription}
                 multiline
                 textAlignVertical="top"
               />
             </View>
           </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Attachment</Text>
+            <TouchableOpacity style={styles.uploadContainer} onPress={pickImage}>
+              {selectedImage ? (
+                <Image source={{ uri: selectedImage }} style={styles.uploadedImage} contentFit="cover" />
+              ) : (
+                <View style={styles.uploadPlaceholder}>
+                  <AttachmentIconSVG width={20} height={20} color="#7C8BA0" />
+                  <Text style={styles.uploadText}>Tap to upload image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.attachmentButton}
-            onPress={handleAttachment}
+          <TouchableOpacity 
+            style={[styles.sendButton, isLoading && { opacity: 0.7 }]} 
+            onPress={handleSend}
+            disabled={isLoading}
           >
-            <AttachmentIconSVG width={24} height={24} color="black" />
-            <Text style={styles.attachmentText}>Attachment</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-            <Text style={styles.sendText}>Send</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.sendText}>Send</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <FlatList
+              data={Object.values(TicketCategory)}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.modalItem} onPress={() => { setCategory(item); setModalVisible(false); }}>
+                  <Text style={styles.modalItemText}>{formatCategory(item)}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -236,31 +340,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 11,
     marginBottom: 40,
+    marginTop: 10,
   },
-  attachmentButton: {
+  uploadContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    padding: 4,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#000000",
+    borderColor: "#B4BED4",
     backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    elevation: 2,
-    flex: 1,
+    height: 120,
+    overflow: 'hidden',
   },
-  attachmentText: {
-    fontFamily: "Raleway",
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#000000",
-    lineHeight: 25,
+  uploadPlaceholder: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  uploadText: {
+    fontFamily: "Open Sans",
+    fontSize: 14,
+    color: "#7C8BA0",
+  },
+  uploadedImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
   },
   sendButton: {
     flexDirection: "row",
@@ -283,5 +389,29 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     lineHeight: 25,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    paddingVertical: 10,
+    maxHeight: '50%',
+  },
+  modalItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalItemText: {
+    fontFamily: 'Open Sans',
+    fontSize: 14,
+    color: '#000',
   },
 });
