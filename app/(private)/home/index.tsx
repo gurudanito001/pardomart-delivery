@@ -17,22 +17,23 @@ import {
 import {
   NotificationSVG,
   SupportSVG,
-  DoubleArrowSVG,
   OrdersIconSVG,
 } from "../../../components/icons";
-import { MenuButton } from "../../../components/MenuButton";
 import OrderCard, { OrderCardProps } from "../../../components/OrderCard";
 import { toast } from "sonner-native";
 import { useQuery } from "@tanstack/react-query";
 import { OrderApi } from "../../../api/endpoints/order-api";
 import { apiConfig } from "../../../api/config";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useCheckActiveOrder } from "@/hooks/useCheckActiveOrder";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const { state: { user } } = useAuth();
   const { updateProfile, loading } = useUser();
+
+  const { isLoading: isActiveOrderLoading } = useCheckActiveOrder();
   
   const orderApi = useMemo(() => new OrderApi(apiConfig), []);
 
@@ -40,6 +41,7 @@ export default function HomeScreen() {
     queryKey: ['orders', 'available'],
     queryFn: async () => {
       const response = await orderApi.orderDeliveryAvailableGet();
+      console.log("Available Orders Response:", response.data);
       return response.data;
     },
     enabled: !!user?.online,
@@ -70,6 +72,14 @@ export default function HomeScreen() {
 
   if (user && !user.online) {
     return <Redirect href="/(private)/home/go-online" />;
+  }
+
+  if (isActiveOrderLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+        <ActivityIndicator size="large" color="#0085FF" />
+      </View>
+    );
   }
 
   const handleGoOffline = async () => {

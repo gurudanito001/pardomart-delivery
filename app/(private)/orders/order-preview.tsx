@@ -17,7 +17,9 @@ import Svg, { Path, Rect, Ellipse } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import { OrderApi } from '../../../api/endpoints/order-api';
 import { apiConfig } from '../../../api/config';
-import { useAuth } from '@/contexts/AppProvider';
+ import { useAuth } from '@/contexts/AppProvider';
+ import { OrderWithRelations } from '@/api';
+import { toast } from 'sonner-native';
 
 const ShoppingBagIcon = () => (
   <Svg width={25} height={25} viewBox="0 0 25 25" fill="none">
@@ -140,7 +142,7 @@ export default function OrderPreviewScreen() {
   const orderApi = useMemo(() => new OrderApi(apiConfig), []);
   const { state } = useAuth();
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading } = useQuery<OrderWithRelations | null>({
     queryKey: ['order', id],
     queryFn: async () => {
       if (!id) return null;
@@ -188,19 +190,23 @@ export default function OrderPreviewScreen() {
           pathname: '/(private)/orders/start-trip',
           params: { id }
         });
-      } else if (order?.deliveryPersonId === null) {
+      } else if (!order?.deliveryPersonId) {
         await orderApi.orderOrderIdAcceptDeliveryPatch(id);
+        toast.success("Order accepted successfully");
         router.push({
           pathname: '/(private)/orders/start-trip',
           params: { id }
         });
-      }
+      }else {
++        toast.error("This order has already been assigned to another delivery person.");
+       }
       
-    } catch (error) {
-      console.error('Failed to accept order:', error);
-    } finally {
-      setIsAccepting(false);
-    }
+    } catch (error: any) {
+       console.error('Failed to accept order:', error);
++      toast.error(error?.message || "Failed to accept order");
+     } finally {
+       setIsAccepting(false);
+     }
   };
 
   const handleGoBack = () => {
@@ -286,7 +292,7 @@ export default function OrderPreviewScreen() {
               </View>
               <View style={styles.contactIcons}>
                 <MessageIcon />
-                <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber)}>
+                <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber as string)}>
                   <PhoneIcon />
                 </TouchableOpacity>
               </View>
@@ -336,11 +342,11 @@ export default function OrderPreviewScreen() {
                   <View style={styles.dateTimeRow}>
                     <View style={styles.dateTimeItem}>
                       <ClockIcon />
-                      <Text style={styles.dateTimeText}>{new Date(order.scheduledShoppingStartTime || order.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                      <Text style={styles.dateTimeText}>{new Date(order.shoppingStartTime || order.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                     </View>
                     <View style={styles.dateTimeItem}>
                       <CalendarIcon />
-                      <Text style={styles.dateTimeText}>{formatDate(order.scheduledShoppingStartTime || order.createdAt || new Date().toISOString())}</Text>
+                      <Text style={styles.dateTimeText}>{formatDate(order.shoppingStartTime || order.createdAt || new Date().toISOString())}</Text>
                     </View>
                   </View>
                 </View>
@@ -372,7 +378,7 @@ export default function OrderPreviewScreen() {
             </View>
             <View style={styles.storeActions}>
               <MessageIcon />
-              <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber)}>
+              <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber as string)}>
                 <PhoneIcon />
               </TouchableOpacity>
             </View>

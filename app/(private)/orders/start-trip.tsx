@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,21 +12,25 @@ import {
   Dimensions,
   ActivityIndicator,
   Linking,
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   MenuButton,
   NotificationSVG,
   SupportSVG,
-  RouteEndMarker,
   DeliveryMap,
   LiveTrackingStats,
 } from '../../../components';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { LocationErrorPinSVG } from "@/components/icons/LocationErrorPinSVG";
+import { ExclamationIconSVG } from "@/components/icons/ExclamationIconSVG";
 import * as Location from 'expo-location';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { OrderApi } from '../../../api/endpoints/order-api';
 import { apiConfig } from '../../../api/config';
+import { DeliveryAddress, Order, OrderStatus, OrderWithRelations, User, Vendor } from '@/api/models';
+import { toast } from 'sonner-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -50,11 +54,11 @@ const PhoneIcon = () => (
   </Svg>
 );
 
-const BackArrowIcon = () => (
+const BackArrowIcon = ({ color = "black" }: { color?: string }) => (
   <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
     <Path
       d="M19.6278 21.993C19.8661 22.2135 20 22.5125 20 22.8243C20 23.1361 19.8661 23.4352 19.6278 23.6556C19.3895 23.8761 19.0662 24 18.7292 24C18.3921 24 18.0689 23.8761 17.8306 23.6556L9.37313 15.8313C9.25486 15.7223 9.16102 15.5927 9.09699 15.4501C9.03296 15.3074 9 15.1545 9 15C9 14.8455 9.03296 14.6926 9.09699 14.5499C9.16102 14.4073 9.25486 14.2777 9.37313 14.1687L17.8306 6.34435C18.0689 6.12387 18.3921 6 18.7292 6C19.0662 6 19.3895 6.12387 19.6278 6.34435C19.8661 6.56483 20 6.86387 20 7.17568C20 7.48749 19.8661 7.78653 19.6278 8.00702L12.07 14.999L19.6278 21.993Z"
-      fill="black"
+      fill={color}
     />
   </Svg>
 );
@@ -146,6 +150,7 @@ const ModalCloseIcon = () => (
   </Svg>
 );
 
+
 const ImportantIcon = () => (
   <Svg width={24} height={24} viewBox="0 0 24 25" fill="none">
     <Path
@@ -176,11 +181,13 @@ export default function StartTripScreen() {
   const { id } = useLocalSearchParams() as { id: string };
   const [showMapModal, setShowMapModal] = useState(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [currentAddress, setCurrentAddress] = useState<string>('Locating...');
+  const [currentAddress, setCurrentAddress] = useState<string>('Locating...'); 
   const [liveDistance, setLiveDistance] = useState<string | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<string | null>(null);
   const [currentSpeed, setCurrentSpeed] = useState<string | null>(null);
+  const [showLocationError, setShowLocationError] = useState(false);
 
+  const queryClient = useQueryClient();
   const orderApi = useMemo(() => new OrderApi(apiConfig), []);
 
   const { data: order, isLoading } = useQuery({
@@ -191,7 +198,96 @@ export default function StartTripScreen() {
       return response.data;
     },
     enabled: !!id,
+  })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (status: OrderStatus) => orderApi.orderIdStatusPatch({ status }, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', id] });
+      queryClient.invalidateQueries({ queryKey: ['activeOrder'] });
+    },
+    onError: (error: any) => {
+      // Default error message
+      let errorMessage = "Failed to update status. Please try again.";
+
+      if (error.response && error.response.data && error.response.data.error) {
+        // This catches the specific error message sent from your backend API, like:
+        // { error: "Cannot transition from 'currently_shopping' to 'delivered'." }
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        // This will catch network errors or other issues where the API didn't respond.
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    }
   });
+
+  // Dynamic Configuration based on Order Status
+  const tripConfig = useMemo(() => {
+    if (!order) return null;
+
+    const status = order.orderStatus;
+    const vendor = order.vendor as Vendor;
+    const deliveryAddress = order.deliveryAddress as DeliveryAddress;
+    const customer = order.user as User;
+
+    // Helper to parse coordinates safely
+    const getCoords = (lat?: string | number | null, lng?: string | number | null) => ({
+      latitude: typeof lat === 'string' ? parseFloat(lat) : lat || 0,
+      longitude: typeof lng === 'string' ? parseFloat(lng) : lng || 0,
+    });
+
+    switch (status) {
+      // --- PHASE 1: PICKUP ---
+      case 'accepted_for_shopping':
+      case 'accepted_for_delivery':
+        return {
+          phase: 'pickup',
+          isStarted: false,
+          destination: { ...getCoords(vendor?.latitude, vendor?.longitude), name: vendor?.name, address: vendor?.address },
+          buttonText: 'Start Trip to Store',
+          nextStatus: 'en_route_to_pickup' as OrderStatus,
+          nextRoute: null, // Stay on screen, UI updates to "Arrived"
+        };
+      case 'en_route_to_pickup':
+        return {
+          phase: 'pickup',
+          isStarted: true,
+          destination: { ...getCoords(vendor?.latitude, vendor?.longitude), name: vendor?.name, address: vendor?.address },
+          buttonText: 'Arrived at Store',
+          nextStatus: 'arrived_at_store' as OrderStatus,
+          nextRoute: '/(private)/orders/store-arrived',
+        };
+
+      // --- PHASE 2: DELIVERY ---
+      case 'ready_for_delivery':
+        return {
+          phase: 'delivery',
+          isStarted: false,
+          destination: { ...getCoords(deliveryAddress?.latitude, deliveryAddress?.longitude), name: customer?.name, address: deliveryAddress?.addressLine1 },
+           buttonText: 'Start Trip',
+           nextStatus: 'en_route_to_delivery' as OrderStatus,
+          nextRoute: null,
+         };
+      case 'en_route_to_delivery':
+        return {
+          phase: 'delivery',
+           isStarted: true,
+           destination: { ...getCoords(deliveryAddress?.latitude, deliveryAddress?.longitude), name: customer?.name, address: deliveryAddress?.addressLine1 },
+           buttonText: 'Arrived at customer location',
+           nextStatus: 'arrived_at_customer_location' as OrderStatus,
+           nextRoute: '/(private)/orders/delivery-verification',
+         };
+
+      // --- PHASE 3: RETURN (If applicable) ---
+      
+      default:
+        // Fallback or error state
+        return null;
+    }
+  }, [order]);
+
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
@@ -240,11 +336,11 @@ export default function StartTripScreen() {
     } catch (e) {
       console.log('Reverse geocoding failed', e);
     }
-
+    
     // Calculate Distance & ETA
-    if (order?.vendor?.latitude && order?.vendor?.longitude) {
-      const lat = typeof order.vendor.latitude === 'string' ? parseFloat(order.vendor.latitude) : order.vendor.latitude;
-      const lng = typeof order.vendor.longitude === 'string' ? parseFloat(order.vendor.longitude) : order.vendor.longitude;
+    if (tripConfig?.destination.latitude && tripConfig?.destination.longitude) {
+      const lat = tripConfig.destination.latitude;
+      const lng = tripConfig.destination.longitude;
       const distKm = getDistanceFromLatLonInKm(
         loc.coords.latitude,
         loc.coords.longitude,
@@ -281,14 +377,10 @@ export default function StartTripScreen() {
 
 
   const handleNavigate = () => {
-    if (order && order.vendor?.latitude && order.vendor?.longitude) {
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${order.vendor.latitude},${order.vendor.longitude}&travelmode=driving`;
+    if (tripConfig?.destination) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${tripConfig.destination.latitude},${tripConfig.destination.longitude}&travelmode=driving`;
       Linking.openURL(url);
     }
-  };
-
-  const handleStartTrip = () => {
-    setShowMapModal(true);
   };
 
   const handleGoBack = () => {
@@ -301,6 +393,39 @@ export default function StartTripScreen() {
     if (router.canGoBack()) {
       router.back();
     }
+  };
+
+  const handlePrimaryAction = () => {
+    if (!tripConfig) return;
+
+    // If we are "Arriving" (trip started), check distance
+    if (tripConfig.isStarted) {
+      if (location && tripConfig.destination.latitude && tripConfig.destination.longitude) {
+        const distKm = getDistanceFromLatLonInKm(
+          location.coords.latitude,
+          location.coords.longitude,
+          tripConfig.destination.latitude,
+          tripConfig.destination.longitude
+        );
+        
+        // 200 meters threshold
+        if (distKm > 0.2) {
+           setShowLocationError(true);
+           return;
+        }
+      }
+    }
+
+    updateStatusMutation.mutate(tripConfig.nextStatus, {
+      onSuccess: () => {
+        if (tripConfig.nextRoute) {
+          router.push({
+            pathname: tripConfig.nextRoute as any,
+            params: { id, orderId: id } // Pass both for compatibility
+          });
+        }
+      }
+    });
   };
 
   const handleMapSelection = (mapType: 'google' | 'inapp') => {
@@ -317,6 +442,53 @@ export default function StartTripScreen() {
       Linking.openURL(`tel:${phoneNumber}`);
     }
   };
+
+  const LocationErrorComponent = ({ onDismiss }: { onDismiss: () => void }) => (
+    <View style={styles.errorContainer}>
+      <LocationErrorPinSVG width={100} height={100} color="#C43D28" />
+      <View style={styles.errorMessageContainer}>
+        <Text style={styles.errorTitle}>Location Error</Text>
+        <Text style={styles.errorQuestionText}>Are you sure you have arrived?</Text>
+      </View>
+      <View style={styles.errorWarningContainer}>
+        <View style={styles.errorWarningIconWrapper}>
+          <View style={styles.errorWarningIconCircle}>
+            <ExclamationIconSVG width={24} height={24} color="white" />
+          </View>
+        </View>
+        <View style={styles.errorWarningTextContainer}>
+          <Text style={styles.errorWarningText}>
+            Kindly confirm if you have gotten to the store because it
+            looks like you have not reached your destination.
+          </Text>
+        </View>
+      </View>
+      <TouchableOpacity style={styles.errorGoBackButton} onPress={onDismiss}>
+        <BackArrowIcon color="#FFF" />
+        <Text style={styles.errorGoBackButtonText}>Go back</Text>
+      </TouchableOpacity>
+      
+      {/* Override Button for GPS drift issues */}
+      <TouchableOpacity 
+        style={[styles.errorGoBackButton, { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#C43D28', marginTop: 10 }]} 
+        onPress={() => {
+          onDismiss();
+          // Force proceed
+          if (tripConfig) {
+             updateStatusMutation.mutate(tripConfig.nextStatus, {
+              onSuccess: () => {
+                if (tripConfig.nextRoute) {
+                  router.push({ pathname: tripConfig.nextRoute as any, params: { id, orderId: id } });
+                }
+              }
+            });
+          }
+        }}
+      >
+        <Text style={[styles.errorGoBackButtonText, { color: '#C43D28' }]}>I am here, Proceed</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   if (isLoading || !order) {
     return (
@@ -339,12 +511,12 @@ export default function StartTripScreen() {
         />
 
         {/* Live Tracking Stats Widget */}
-        <LiveTrackingStats
+        {/* <LiveTrackingStats
           distance={liveDistance || undefined}
           estimatedTime={estimatedTime || undefined}
           speed={currentSpeed || undefined}
           isActive={true}
-        />
+        /> */}
 
         {/* Overlay Header */}
         <View style={styles.overlayHeaderContainer}>
@@ -381,88 +553,89 @@ export default function StartTripScreen() {
         <ScrollView
           style={styles.cardScroll}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={showLocationError ? styles.errorScrollContent : styles.scrollContent}
         >
-          <View style={styles.storeCard}>
-            <View style={styles.storeInfo}>
-              <Image
-                source={{ uri: order.vendor?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66' }}
-                style={styles.storeLogo}
-              />
-              <View style={styles.storeDetails}>
-                <Text style={styles.storeName}>{order.vendor?.name || 'Store Name'}</Text>
-                <Text style={styles.storeAddress}>{order.vendor?.address || 'Store Address'}</Text>
-              </View>
-            </View>
-            <View style={styles.contactIcons}>
-              <MessageIcon />
-              <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber || undefined)}>
-                <PhoneIcon />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.customerCard}>
-            <View style={styles.customerInfo}>
-              <Image
-                source={{ uri: order.user?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60' }}
-                style={styles.customerAvatar}
-              />
-              <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
-            </View>
-            <View style={styles.contactIcons}>
-              <MessageIcon />
-              <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber || undefined)}>
-                <PhoneIcon />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* <View style={styles.deliveryCard}>
-            <View style={styles.importantIconContainer}>
-              <ImportantIcon />
-            </View>
-            <View style={styles.deliveryInfo}>
-              <Text style={styles.deliveryLabel}>Delivery Instruction</Text>
-              <Text style={styles.deliveryText}>{order.deliveryInstructions || 'No special instructions'}</Text>
-            </View>
-          </View> */}
-
-          <View style={styles.routeContainer}>
-            <View style={styles.routeTimelineContainer}>
-              <RouteTimeline />
-            </View>
-            <View style={styles.routeDetails}>
-              <View style={styles.routeSection}>
-                <View style={styles.locationInfo}>
-                  <Text style={styles.locationTitle}>{order.vendor?.name || 'Store'}</Text>
-                  <Text style={styles.locationAddress}>
-                    {order.vendor?.address || 'Store Address'}
-                  </Text>
+          {showLocationError ? (
+            <LocationErrorComponent onDismiss={() => setShowLocationError(false)} />
+          ) : (
+            <>
+              <View style={styles.storeCard}>
+                <View style={styles.storeInfo}>
+                  <Image
+                    source={{ uri: order.vendor?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/dbf8d1142bcb6b2582427f0f75f675f0cd1e0a16?width=66' }}
+                    style={styles.storeLogo}
+                  />
+                  <View style={styles.storeDetails}>
+                    <Text style={styles.storeName}>{order.vendor?.name || 'Store Name'}</Text>
+                    <Text style={styles.storeAddress}>{order.vendor?.address || 'Store Address'}</Text>
+                  </View>
                 </View>
-                <TouchableOpacity onPress={handleNavigate} style={styles.navigateButton}>
-                  <NavigateIcon />
-                  <Text style={styles.navigateText}>Navigate</Text>
-                </TouchableOpacity>
+                <View style={styles.contactIcons}>
+                  <MessageIcon />
+                  <TouchableOpacity onPress={() => handleCall(order.vendor?.mobileNumber || undefined)}>
+                    <PhoneIcon />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <View style={styles.distanceSection}>
-                <Text style={styles.distanceLabel}>Distance</Text>
-                <Text style={styles.distanceValue}>{liveDistance || (order.vendor?.distance ? `${order.vendor.distance} Miles` : '0 Miles')}</Text>
+              <View style={styles.customerCard}>
+                <View style={styles.customerInfo}>
+                  <Image
+                    source={{ uri: order.user?.image || 'https://api.builder.io/api/v1/image/assets/TEMP/e8982379bf4437085e115a280c121ce36487d5e0?width=60' }}
+                    style={styles.customerAvatar}
+                  />
+                  <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
+                </View>
+                <View style={styles.contactIcons}>
+                  <MessageIcon />
+                  <TouchableOpacity onPress={() => handleCall(order.user?.mobileNumber || undefined)}>
+                    <PhoneIcon />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <View style={styles.destinationSection}>
-                <Text style={styles.destinationText}>{currentAddress}</Text>
-              </View>
-            </View>
-          </View>
+              <View style={styles.routeContainer}>
+                <View style={styles.routeTimelineContainer}>
+                  <RouteTimeline />
+                </View>
+                <View style={styles.routeDetails}>
+                  <View style={styles.routeSection}>
+                    <View style={styles.locationInfo}>
+                      <Text style={styles.locationTitle}>{order.vendor?.name || 'Store'}</Text>
+                      <Text style={styles.locationAddress}>
+                        {order.vendor?.address || 'Store Address'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={handleNavigate} style={styles.navigateButton}>
+                      <NavigateIcon />
+                      <Text style={styles.navigateText}>Navigate</Text>
+                    </TouchableOpacity>
+                  </View>
 
-          <TouchableOpacity style={styles.startTripButton} onPress={handleStartTrip}>
-            {/* <View style={styles.buttonIcon}>
-              <DoubleChevronIcon />
-            </View> */}
-            <Text style={styles.startTripText}>Start Trip</Text>
-          </TouchableOpacity>
+                  <View style={styles.distanceSection}>
+                    <Text style={styles.distanceLabel}>Distance</Text>
+                    <Text style={styles.distanceValue}>{liveDistance || (order.vendor?.distance ? `${order.vendor.distance} Miles` : '0 Miles')}</Text>
+                  </View>
+
+                  <View style={styles.destinationSection}>
+                    <Text style={styles.destinationText}>{currentAddress}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity 
+                style={styles.startTripButton} 
+                onPress={handlePrimaryAction}
+                disabled={updateStatusMutation.isPending}
+              >
+                {updateStatusMutation.isPending ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.startTripText}>{tripConfig?.buttonText}</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </View>
 
@@ -612,6 +785,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 4,
     paddingBottom: 18,
+  },
+  errorScrollContent: {
+    paddingTop: 4,
   },
   barIndicator: {
     width: 70,
@@ -858,6 +1034,28 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     flex: 1,
   },
+  arrivedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0085FF',
+    borderRadius: 16,
+    paddingVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
+    position: 'relative',
+  },
+  arrivedButtonText: {
+    color: '#FFF',
+    textAlign: 'center',
+    fontFamily: 'Raleway',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 25,
+    flex: 1,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -934,6 +1132,86 @@ const styles = StyleSheet.create({
     fontFamily: 'Raleway',
     fontSize: 16,
     fontWeight: '700',
+    lineHeight: 25,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    gap: 20,
+    paddingHorizontal: 10,
+  },
+  errorMessageContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  errorTitle: {
+    fontFamily: 'Raleway',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#C43D28',
+    textAlign: 'center',
+  },
+  errorQuestionText: {
+    fontFamily: 'Raleway',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+  },
+  errorWarningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    alignSelf: 'stretch',
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#B4BED4',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
+  },
+  errorWarningIconWrapper: {
+    width: 40,
+    height: 40,
+  },
+  errorWarningIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 32,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorWarningTextContainer: {
+    flex: 1,
+  },
+  errorWarningText: {
+    fontFamily: 'Open Sans',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#898A8D',
+  },
+  errorGoBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 55,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: '#0085FF',
+    width: '100%',
+  },
+  errorGoBackButtonText: {
+    fontFamily: 'Raleway',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
     lineHeight: 25,
   },
 });

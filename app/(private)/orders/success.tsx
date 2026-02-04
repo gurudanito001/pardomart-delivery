@@ -1,10 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { NotificationSVG, SupportSVG } from "@/components/icons";
 import { DiplomaVerifiedSVG } from "@/components/icons/DiplomaVerifiedSVG";
 import Svg, { Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
+import { OrderApi } from "@/api";
+import { apiConfig } from "@/api/config";
 
 const BackArrowIcon = () => (
   <Svg width={30} height={30} viewBox="0 0 31 30" fill="none">
@@ -16,6 +19,22 @@ const BackArrowIcon = () => (
 );
 
 export default function SuccessScreen() {
+
+  const { id } = useLocalSearchParams() as { id: string };
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const { data: order, isLoading } = useQuery({
+    queryKey: ['order', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await orderApi.orderIdGet(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+
+
+
   const handleGoBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -32,9 +51,24 @@ export default function SuccessScreen() {
     router.push("/(tabs)/help");
   };
 
-  const handleDoneShopping = () => {
-    router.push("/(tabs)/orders");
-  };
+  const handleContinue = () => {
+    router.push({
+      pathname: "/(private)/orders/start-trip",
+      params: { id }
+    });
+   };
+
+
+     if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0085FF" />
+      </View>
+    );
+  }
+
+  const isShopping = order?.shoppingMethod === 'delivery_person';
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -64,10 +98,11 @@ export default function SuccessScreen() {
       <View style={styles.content}>
         <View style={styles.successContent}>
           <DiplomaVerifiedSVG width={100} height={100} />
-          <Text style={styles.title}>Shopping Completed</Text>
+          <Text style={styles.title}>{isShopping ? "Shopping Completed" : "Pickup Verified"}</Text>
           <Text style={styles.message}>
-            Congratulations, your Order has been verified{"\n"}and you have
-            completed shopping
+            {isShopping 
+              ? "Congratulations, your Order has been verified\nand you have completed shopping"
+              : "Congratulations, the order pickup has been verified.\nYou can now proceed to delivery."}
           </Text>
         </View>
       </View>
@@ -75,9 +110,9 @@ export default function SuccessScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.doneButton}
-          onPress={handleDoneShopping}
+          onPress={handleContinue}
         >
-          <Text style={styles.doneButtonText}>Done Shopping</Text>
+          <Text style={styles.doneButtonText}>{isShopping ? "Done Shopping" : "Start Delivery"}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -89,6 +124,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFF",
   },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+   },
   header: {
     width: "100%",
     paddingHorizontal: 25,

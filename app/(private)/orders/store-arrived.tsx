@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,72 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  ActivityIndicator
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   MenuSVG,
   NotificationSVG,
   SupportSVG,
   ShoppingBagIconSVG,
-} from "@/components/icons";
+} from "../../../components/icons";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { OrderApi } from "../../../api/endpoints/order-api";
+import { apiConfig } from "../../../api/config";
 import { colors, typography, borderRadius, shadows } from "@/styles/theme";
+import { toast } from "sonner-native";
 
 export default function ArrivedStoreScreen() {
+  const { id } = useLocalSearchParams() as { id: string };
+
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const { data: order, isLoading } = useQuery({
+    queryKey: ["order", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await orderApi.orderIdGet(id);
+      return response.data;
+    },
+    refetchInterval: 5000,
+    enabled: !!id,
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (status: string) => orderApi.orderIdStatusPatch({ status: status as any }, id),
+    onSuccess: () => {
+      router.push({
+        pathname: "/(private)/orders/finding-items",
+        params: { id }
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to start shopping");
+    }
+  });
+
+  useEffect(() => {
+    if (order?.shoppingMethod === "vendor" && order?.pickupOtpVerifiedAt) {
+      router.push({
+        pathname: "/(private)/orders/success",
+        params: { id }
+      });
+    }
+  }, [order?.pickupOtpVerifiedAt, order?.shoppingMethod]);
+
   const handleStartShopping = () => {
-    router.push("/(tabs)/orders/shopping-list" as any);
+    updateStatusMutation.mutate('currently_shopping');
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0085FF" />
+      </View>
+    );
+  }
+
+  const isVendorPickup = order?.shoppingMethod === "vendor";
 
   return (
     <View style={styles.container}>
@@ -43,7 +95,7 @@ export default function ArrivedStoreScreen() {
         </View>
 
         <View style={styles.content}>
-          <View style={styles.illustrationContainer}>
+          {/* <View style={styles.illustrationContainer}>
             <Image
               source={{
                 uri: "https://api.builder.io/api/v1/image/assets/TEMP/2606f94dcf3cd1a70095ddce10de471b5ffa2498?width=544",
@@ -54,30 +106,74 @@ export default function ArrivedStoreScreen() {
             <Text style={styles.title}>
               Congratulations,{"\n"}You have arrived store
             </Text>
-          </View>
+          </View> */}
 
-          <View style={styles.infoCard}>
-            <View style={styles.iconCircle}>
-              <ShoppingBagIconSVG width={25} height={25} color="#FFF" />
-            </View>
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoText}>
-                This Order includes shopping, you should now proceed to shopping
-                the items for the customer
+          {isVendorPickup ? (
+            <View style={styles.vendorContent}>
+              <Text style={styles.title}>Order Verification</Text>
+
+              <View style={styles.codeContainer}>
+                <Text style={styles.label}>Order Code</Text>
+                <Text style={styles.codeValue}>{order?.orderCode}</Text>
+              </View>
+              <View style={styles.codeContainer}>
+                <Text style={styles.label}>OTP Code</Text>
+                <Text style={styles.codeValue}>{order?.pickupOtp}</Text>
+              </View>
+
+              <Text style={styles.footerText}>
+                Please wait while your code is been verified. This page automatically redirects you once confirmed
               </Text>
+
             </View>
-          </View>
+          ) : (
+            <>
+              <View style={styles.illustrationContainer}>
+                <Image
+                  source={{
+                    uri: "https://api.builder.io/api/v1/image/assets/TEMP/2606f94dcf3cd1a70095ddce10de471b5ffa2498?width=544",
+                  }}
+                  style={styles.illustration}
+                  resizeMode="contain"
+                />
+                <Text style={styles.title}>
+                  Congratulations,{"\n"}You have arrived store
+                </Text>
+              </View>
+
+              <View style={styles.infoCard}>
+                <View style={styles.iconCircle}>
+                  <ShoppingBagIconSVG width={25} height={25} color="#FFF" />
+                </View>
+                <View style={styles.infoTextContainer}>
+                  <Text style={styles.infoText}>
+                    This Order includes shopping, you should now proceed to shopping
+                    the items for the customer
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={handleStartShopping}
-        >
-          <Text style={styles.startButtonText}>Start Shopping</Text>
-        </TouchableOpacity>
-      </View>
+      {!isVendorPickup && (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={handleStartShopping}
+            disabled={updateStatusMutation.isPending}
+          >
+            {updateStatusMutation.isPending ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.startButtonText}>Start Shopping</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+
     </View>
   );
 }
@@ -86,6 +182,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFF",
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  vendorContent: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 30,
+    paddingHorizontal: 20,
+  },
+  codeContainer: {
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  label: {
+    fontFamily: typography.families.secondary,
+    fontSize: 16,
+    color: '#898A8D',
+  },
+  codeValue: {
+    fontFamily: typography.families.accent,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#000',
+    letterSpacing: 2,
+  },
+  footerText: {
+    fontFamily: typography.families.secondary,
+    fontSize: 14,
+    color: '#898A8D',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 20,
   },
   scrollView: {
     flex: 1,

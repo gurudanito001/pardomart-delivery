@@ -412,7 +412,7 @@ const { status, data } = await apiInstance.orderVendorGet(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **orderVendorOrdersGet**
-> Array<VendorOrder> orderVendorOrdersGet()
+> Array<OrderWithRelations> orderVendorOrdersGet()
 
 
 ### Example
@@ -442,7 +442,7 @@ const { status, data } = await apiInstance.orderVendorOrdersGet(
 
 ### Return type
 
-**Array<VendorOrder>**
+**Array<OrderWithRelations>**
 
 ### Authorization
 

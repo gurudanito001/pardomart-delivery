@@ -96,7 +96,7 @@ export default function OrderCard({
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.trackText}>Track your Order request here</Text>
+        <Text style={styles.trackText}>View your Order request here</Text>
         <TouchableOpacity style={styles.previewButton} onPress={onPreviewOrder}>
           <Text style={styles.previewButtonText}>Preview Order</Text>
         </TouchableOpacity>

@@ -20,7 +20,7 @@ const Index = () => {
       } else if (state.isRegistered) {
         router.replace('/auth/sign-in');
       } else {
-        router.replace('/go-online');
+        router.replace('/(private)/home/go-online');
       }
     }
   }, [state.isReady, state.isAuthenticated, state.isRegistered, segments, router]);

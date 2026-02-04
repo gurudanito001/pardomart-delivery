@@ -32,7 +32,8 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
 }) => {
   const mapRef = useRef<MapView>(null);
   const [route, setRoute] = useState<RoutePoint[]>([]);
-  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const hasFittedRoute = useRef(false);
 
   // Generate a simple route (in production, use Google Directions API or similar)
   const generateSimpleRoute = () => {
@@ -62,7 +63,7 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
 
   // Auto-center map on current location when tracking
   useEffect(() => {
-    if (isTracking && currentLocation && mapRef.current) {
+    if (isTracking && currentLocation && mapRef.current && isMapReady && hasFittedRoute.current) {
       mapRef.current.animateToRegion(
         {
           latitude: currentLocation.coords.latitude,
@@ -73,31 +74,39 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
         1000
       );
     }
-  }, [currentLocation, isTracking]);
+  }, [currentLocation, isTracking, isMapReady]);
 
   // Initial map centering
-  const handleMapReady = () => {
-    if (currentLocation && destinationLat && destinationLng && mapRef.current) {
-      const minLat = Math.min(currentLocation.coords.latitude, destinationLat);
-      const maxLat = Math.max(currentLocation.coords.latitude, destinationLat);
-      const minLng = Math.min(currentLocation.coords.longitude, destinationLng);
-      const maxLng = Math.max(currentLocation.coords.longitude, destinationLng);
-
-      const padding = 0.02;
-      mapRef.current.fitToCoordinates(
-        [
+  useEffect(() => {
+    if (isMapReady && currentLocation && mapRef.current && !hasFittedRoute.current) {
+      if (destinationLat && destinationLng) {
+        mapRef.current.fitToCoordinates(
+          [
+            {
+              latitude: currentLocation.coords.latitude,
+              longitude: currentLocation.coords.longitude,
+            },
+            { latitude: destinationLat, longitude: destinationLng },
+          ],
           {
-            latitude: currentLocation.coords.latitude,
-            longitude: currentLocation.coords.longitude,
-          },
-          { latitude: destinationLat, longitude: destinationLng },
-        ],
-        {
-          edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
-          animated: true,
-        }
-      );
+            edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
+            animated: true,
+          }
+        );
+      } else {
+        mapRef.current.animateToRegion({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.0121,
+        });
+      }
+      hasFittedRoute.current = true;
     }
+  }, [isMapReady, currentLocation, destinationLat, destinationLng]);
+
+  const handleMapReady = () => {
+    setIsMapReady(true);
   };
 
   if (!currentLocation) {

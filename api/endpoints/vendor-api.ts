@@ -34,6 +34,8 @@ import type { OrderItemWithRelations } from '../models';
 // @ts-ignore
 import type { OrderStatus } from '../models';
 // @ts-ignore
+import type { OrderWithRelations } from '../models';
+// @ts-ignore
 import type { PaginatedTrendingVendorProducts } from '../models';
 // @ts-ignore
 import type { PaginatedVendors } from '../models';
@@ -55,8 +57,6 @@ import type { UpdateVendorPayload } from '../models';
 import type { Vendor } from '../models';
 // @ts-ignore
 import type { VendorListItem } from '../models';
-// @ts-ignore
-import type { VendorOrder } from '../models';
 // @ts-ignore
 import type { VendorWithDetails } from '../models';
 // @ts-ignore
@@ -1283,7 +1283,7 @@ export const VendorApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async orderVendorOrdersGet(status?: OrderStatus, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<VendorOrder>>> {
+        async orderVendorOrdersGet(status?: OrderStatus, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<OrderWithRelations>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.orderVendorOrdersGet(status, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['VendorApi.orderVendorOrdersGet']?.[localVarOperationServerIndex]?.url;
@@ -1630,7 +1630,7 @@ export const VendorApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        orderVendorOrdersGet(status?: OrderStatus, options?: RawAxiosRequestConfig): AxiosPromise<Array<VendorOrder>> {
+        orderVendorOrdersGet(status?: OrderStatus, options?: RawAxiosRequestConfig): AxiosPromise<Array<OrderWithRelations>> {
             return localVarFp.orderVendorOrdersGet(status, options).then((request) => request(axios, basePath));
         },
         /**

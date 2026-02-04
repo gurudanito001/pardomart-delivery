@@ -191,6 +191,15 @@ Uses Haversine formula for accurate geodetic distance:
   - Google Maps API key configured (for iOS/Android)
   - Device with GPS capability
 
+## Bug Fixes & Improvements (Latest)
+
+1.  **Map Initialization Race Condition**: Fixed an issue where the map would not correctly fit to show the route if location data arrived after the map was ready. Added `isMapReady` state and `useEffect` hooks to ensure `fitToCoordinates` is called reliably.
+2.  **Tracking vs. Route View**: Adjusted logic to ensure the map fits the entire route (user + destination) initially before enabling the auto-centering tracking mode.
+3.  **Single Point Handling**: Fixed a bug where the map would fail to initialize or track if no destination was provided. Now gracefully centers on the user if the destination is missing.
+4.  **Native Crash Resolution**: Disabled New Architecture (`newArchEnabled=false`) in `gradle.properties` to resolve `TurboModuleRegistry` errors with `react-native-maps`.
+5.  **Performance**: Removed unused state variables and imports in `DeliveryMap` and `LiveTrackingStats`.
+6.  **Code Cleanup**: Removed unused `Animated` and `Dimensions` imports from `LiveTrackingStats`.
+
 ---
 
 **Status**: ✅ Complete and Production Ready

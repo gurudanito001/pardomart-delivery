@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
 interface LiveTrackingStatsProps {

@@ -1,6 +1,10 @@
-import { router } from "expo-router";
-import React from "react";
+import { OrderApi } from "@/api";
+import { apiConfig } from "@/api/config";
+import { useQuery } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo } from "react";
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -16,12 +20,38 @@ import {
 } from "../../../components/icons";
 
 export default function VerifyOrderCode() {
+  const { orderId } = useLocalSearchParams() as { orderId: string };
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const { data: order, isLoading } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      const response = await orderApi.orderIdGet(orderId);
+      return response.data;
+    },
+    enabled: !!orderId,
+    refetchInterval: 10000, // Poll every 10 seconds
+  });
+
+  useEffect(() => {
+    if (order?.pickupOtpVerifiedAt) {
+      router.push({
+        pathname: "/(private)/orders/success",
+        params: { id: orderId }
+      });
+    }
+  }, [order?.pickupOtpVerifiedAt]);
+
   const handleBackPress = () => {
     router.back();
   };
 
   const handleProceed = () => {
-    router.push("/(tabs)/orders/order-verified");
+    router.push({
+      pathname: "/(private)/orders/success",
+      params: { id: orderId }
+    });
   };
 
   return (
@@ -49,13 +79,19 @@ export default function VerifyOrderCode() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.mainContent}>
-          <Text style={styles.title}>Order Code</Text>
+          <Text style={styles.title}>Order OTP</Text>
           <Text style={styles.subtitle}>
-            This is the order code for the delivery
+            This is the order otp for the delivery
           </Text>
 
           <View style={styles.codeBox}>
-            <Text style={styles.codeText}>44FRDDESH</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#0085FF" />
+            ) : (
+              <Text style={styles.codeText}>
+                {order?.pickupOtp || order?.orderCode || "..."}
+              </Text>
+            )}
           </View>
 
           <TouchableOpacity

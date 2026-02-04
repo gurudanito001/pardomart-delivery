@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,17 +7,39 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { NotificationSVG } from "@/components/icons/NotificationSVG";
 import { SupportSVG } from "@/components/icons/SupportSVG";
 import { ArrowBackSVG } from "@/components";
+import * as ImagePicker from "expo-image-picker";
+import { useMutation } from "@tanstack/react-query";
+import { OrderApi } from "@/api/endpoints/order-api";
+import { apiConfig } from "@/api/config";
+import { toast } from "sonner-native";
 
 export default function DeliveryVerificationScreen() {
-  const [uploadedFile, setUploadedFile] = useState<string>(
-    "dPcq4Col14ggET132-jpeg"
-  );
+  const { orderId } = useLocalSearchParams() as { orderId: string };
+  const [image, setImage] = useState<{ uri: string; base64: string | null } | null>(null);
+
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
+
+  const completeDeliveryMutation = useMutation({
+    mutationFn: async (data: { image: string }) => {
+      if (!orderId) throw new Error("Order ID is missing");
+      return orderApi.orderOrderIdCompleteDeliveryPost({ image: data.image } as any, orderId);
+    },
+    onSuccess: () => {
+      toast.success("Delivery verified successfully");
+      router.push("/(private)/orders/delivery-completed");
+    },
+    onError: (error: any) => {
+      console.error("Delivery verification failed:", error);
+      toast.error(error?.message || "Failed to verify delivery");
+    },
+  });
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
@@ -33,14 +55,39 @@ export default function DeliveryVerificationScreen() {
     router.push("/(tabs)/help");
   };
 
-  const handleUploadFile = () => {
-    // TODO: Implement file upload logic
-    console.log("Upload file pressed");
+  const handleTakePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      toast.error("Permission to access camera is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImage({
+        uri: result.assets[0].uri,
+        base64: result.assets[0].base64 || null,
+      });
+    }
   };
 
   const handleSubmit = () => {
-    // TODO: Implement submit logic
-    console.log("Submit pressed");
+    if (!image?.base64) {
+      toast.error("Please take a picture of the delivery first");
+      return;
+    }
+    
+    const base64Image = `data:image/jpeg;base64,${image.base64}`;
+    
+    completeDeliveryMutation.mutate({ image: base64Image });
   };
 
   return (
@@ -79,29 +126,6 @@ export default function DeliveryVerificationScreen() {
 
         {/* Main Content */}
         <View style={styles.content}>
-          {/* Instruction Text */}
-          <Text style={styles.instructionText}>
-            Kindly provide the delivery verification for this Order to complete
-            this Order request
-          </Text>
-
-          {/* Example Image Section */}
-          <View style={styles.exampleSection}>
-            <View style={styles.exampleImageContainer}>
-              <Image
-                source={{
-                  uri: "https://api.builder.io/api/v1/image/assets/TEMP/1804cb8424adf93fa961bd22fe273414c1e400da",
-                }}
-                style={styles.exampleImage}
-                resizeMode="cover"
-              />
-              <Text style={styles.exampleText}>
-                Please provide a picture that looks like this - The orders
-                showing with the customer's house number for verification
-              </Text>
-            </View>
-          </View>
-
           {/* Upload Section */}
           <View style={styles.uploadSection}>
             <View style={styles.uploadHeader}>
@@ -109,36 +133,41 @@ export default function DeliveryVerificationScreen() {
               <Text style={styles.requiredLabel}>Required*</Text>
             </View>
 
-            <Text style={styles.uploadDescription}>
-              Please provide a clear of the delivery with the house number. It
-              should show the delivery box and the house number
-            </Text>
-
             <View style={styles.divider} />
 
-            <View style={styles.uploadActions}>
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={handleUploadFile}
-              >
-                <Ionicons name="add" size={20} color="#FFF" />
-                <Text style={styles.uploadButtonText}>Upload File</Text>
-              </TouchableOpacity>
-
-              {uploadedFile && (
-                <View style={styles.fileInfo}>
-                  <Ionicons name="document-outline" size={16} color="#7C7B7B" />
-                  <Text style={styles.fileName}>{uploadedFile}</Text>
-                </View>
-              )}
+            <View style={styles.imageContainer}>
+                {image ? (
+                    <Image source={{ uri: image.uri }} style={styles.previewImage} resizeMode="cover" />
+                ) : (
+                    <View style={styles.placeholderContainer}>
+                        <Ionicons name="image-outline" size={48} color="#CCC" />
+                        <Text style={styles.placeholderText}>No image captured</Text>
+                    </View>
+                )}
             </View>
+
+            <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={handleTakePhoto}
+              >
+                <Ionicons name="camera" size={20} color="#FFF" />
+                <Text style={styles.uploadButtonText}>{image ? "Retake Picture" : "Take Picture"}</Text>
+              </TouchableOpacity>
           </View>
         </View>
 
         {/* Submit Button */}
         <View style={styles.submitContainer}>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
+          <TouchableOpacity 
+            style={[styles.submitButton, (!image || completeDeliveryMutation.isPending) && styles.disabledButton]} 
+            onPress={handleSubmit}
+            disabled={!image || completeDeliveryMutation.isPending}
+          >
+            {completeDeliveryMutation.isPending ? (
+                <ActivityIndicator color="#FFF" />
+            ) : (
+                <Text style={styles.submitButtonText}>Complete Delivery</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -211,35 +240,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 21,
   },
-  instructionText: {
-    fontFamily: "Open Sans",
-    fontSize: 12,
-    fontWeight: "400",
-    color: "#484C52",
-    lineHeight: 16,
-  },
-  exampleSection: {
-    borderRadius: 16,
-    backgroundColor: "#F0F2F4",
-    padding: 27,
-  },
-  exampleImageContainer: {
-    alignItems: "center",
-    gap: 14,
-  },
-  exampleImage: {
-    width: 264,
-    height: 176,
-    borderRadius: 8,
-  },
-  exampleText: {
-    fontFamily: "Open Sans",
-    fontSize: 10,
-    fontWeight: "400",
-    color: "#707070",
-    textAlign: "center",
-    lineHeight: 14,
-  },
   uploadSection: {
     borderRadius: 16,
     borderWidth: 1,
@@ -264,29 +264,38 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#F00",
   },
-  uploadDescription: {
-    fontFamily: "Open Sans",
-    fontSize: 10,
-    fontWeight: "400",
-    color: "#707070",
-    lineHeight: 14,
-  },
   divider: {
     width: "100%",
     height: 1,
     backgroundColor: "#D9D9D9",
   },
-  uploadActions: {
-    flexDirection: "row",
+  imageContainer: {
+    height: 200,
+    backgroundColor: "#F0F2F4",
+    borderRadius: 8,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 6,
+    overflow: "hidden",
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  placeholderContainer: {
+    alignItems: "center",
+    gap: 8,
+  },
+  placeholderText: {
+    fontFamily: "Open Sans",
+    fontSize: 12,
+    color: "#7C7B7B",
   },
   uploadButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
     borderRadius: 16,
     backgroundColor: "#0085FF",
   },
@@ -296,20 +305,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFF",
   },
-  fileInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  fileName: {
-    fontFamily: "Open Sans",
-    fontSize: 12,
-    fontWeight: "400",
-    color: "#7C7B7B",
-  },
   submitContainer: {
     paddingHorizontal: 21,
-    marginTop: 167,
+    marginTop: 40,
   },
   submitButton: {
     height: 53,
@@ -322,6 +320,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 9,
     elevation: 2,
+  },
+  disabledButton: {
+    backgroundColor: "#A0CFFF",
   },
   submitButtonText: {
     fontFamily: "Raleway",

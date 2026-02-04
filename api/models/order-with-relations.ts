@@ -15,13 +15,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { CartItem } from './cart-item';
-// May contain unused imports in some cases
-// @ts-ignore
 import type { DeliveryAddress } from './delivery-address';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { DeliveryMethod } from './delivery-method';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { OrderItemWithRelations } from './order-item-with-relations';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { OrderStatus } from './order-status';
@@ -36,48 +36,46 @@ import type { PaymentStatus } from './payment-status';
 import type { ShoppingMethod } from './shopping-method';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { User } from './user';
+import type { UserSummary } from './user-summary';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Vendor } from './vendor';
+import type { VendorWithDetails } from './vendor-with-details';
 
-export interface Order {
+export interface OrderWithRelations {
     'id'?: string;
     'userId'?: string;
     'vendorId'?: string;
+    'orderCode'?: string;
+    'pickupOtp'?: string | null;
+    'subtotal'?: number;
     'totalAmount'?: number;
     'deliveryFee'?: number | null;
     'serviceFee'?: number | null;
     'shoppingFee'?: number | null;
+    'shopperTip'?: number | null;
+    'deliveryPersonTip'?: number | null;
     'paymentMethod'?: PaymentMethods;
     'paymentStatus'?: PaymentStatus;
     'orderStatus'?: OrderStatus;
     'deliveryAddressId'?: string | null;
     'deliveryInstructions'?: string | null;
+    'shopperId'?: string | null;
+    'deliveryPersonId'?: string | null;
     'shoppingMethod'?: ShoppingMethod;
     'deliveryMethod'?: DeliveryMethod;
-    'scheduledShoppingStartTime'?: string | null;
-    'shoppingHandlerId'?: string | null;
-    'deliveryPersonId'?: string | null;
-    'reasonForDecline'?: string | null;
-    'createdAt'?: string;
-    'updatedAt'?: string;
-    'orderItems'?: Array<CartItem>;
-    'user'?: User;
-    'vendor'?: Vendor;
-    'deliveryAddress'?: DeliveryAddress;
-    'shopper'?: User;
-    'deliverer'?: User;
-    'orderCode'?: string;
-    'pickupOtp'?: string | null;
-    'subtotal'?: number;
-    'shopperTip'?: number | null;
-    'deliveryPersonTip'?: number | null;
-    'shopperId'?: string | null;
     'shoppingStartTime'?: string | null;
     'scheduledDeliveryTime'?: string | null;
     'actualDeliveryTime'?: string | null;
     'pickupOtpVerifiedAt'?: string | null;
+    'reasonForDecline'?: string | null;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+    'user'?: UserSummary;
+    'shopper'?: UserSummary;
+    'deliveryPerson'?: UserSummary;
+    'orderItems'?: Array<OrderItemWithRelations>;
+    'vendor'?: VendorWithDetails;
+    'deliveryAddress'?: DeliveryAddress;
 }
 
 

@@ -13,15 +13,33 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.danielnwokocha.pardomartdelivery",
+      "infoPlist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track delivery progress.",
+        "NSLocationAlwaysUsageDescription": "We need your location to track delivery progress even when the app is in the background.",
+        "NSLocationWhenInUseUsageDescription": "We need your location to show where you are on the map.",
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.danielnwokocha.pardomartdelivery"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -29,6 +47,12 @@
     "plugins": [
       "expo-font",
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4197cecd-5401-4bd5-99bb-98801bac1eba"
+      }
+    }
   }
 }

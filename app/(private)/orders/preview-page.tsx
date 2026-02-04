@@ -1,425 +1,499 @@
-import React from "react";
+import { OrderApi } from '@/api';
+import { apiConfig } from '@/api/config';
+import type { OrderItem, OrderStatus } from '@/api/models';
+import { useOrderDetails } from '@/hooks/api/useOrderDetails';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useMemo } from 'react';
 import {
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Image,
-} from "react-native";
-import { router } from "expo-router";
-import Svg, { Path, Circle, Rect } from "react-native-svg";
-import { ArrowBackSVG, NotificationSVG, SupportSVG } from "@/components";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Path, Svg } from 'react-native-svg';
+import { toast } from 'sonner-native';
+import { borderRadius, colors, shadows, spacing, typography } from '../../../styles/theme';
 
-const LightBulbIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M7 20H11C11 21.1 10.1 22 9 22C7.9 22 7 21.1 7 20ZM5 19H13V17H5V19ZM16.5 9.5C16.5 13.32 13.84 15.36 12.73 16H5.27C4.16 15.36 1.5 13.32 1.5 9.5C1.5 5.36 4.86 2 9 2C13.14 2 16.5 5.36 16.5 9.5ZM14.5 9.5C14.5 6.47 12.03 4 9 4C5.97 4 3.5 6.47 3.5 9.5C3.5 11.97 4.99 13.39 5.85 14H12.15C13.01 13.39 14.5 11.97 14.5 9.5ZM21.37 7.37L20 8L21.37 8.63L22 10L22.63 8.63L24 8L22.63 7.37L22 6L21.37 7.37ZM19 6L19.94 3.94L22 3L19.94 2.06L19 0L18.06 2.06L16 3L18.06 3.94L19 6Z"
-      fill="#FFAC06"
-    />
+type GroupedItems = Record<string, OrderItem[]>;
+
+const InfoIcon = () => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z" fill="#0085FF"/>
   </Svg>
 );
 
-const CheckmarkIcon = () => (
-  <Svg width={13} height={12} viewBox="0 0 13 12" fill="none">
-    <Path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M6.01626 12C6.80633 12 7.58866 11.8448 8.31858 11.5433C9.04851 11.2417 9.71174 10.7998 10.2704 10.2426C10.8291 9.68549 11.2722 9.02405 11.5746 8.2961C11.8769 7.56815 12.0325 6.78793 12.0325 6C12.0325 5.21207 11.8769 4.43185 11.5746 3.7039C11.2722 2.97595 10.8291 2.31451 10.2704 1.75736C9.71174 1.20021 9.04851 0.758251 8.31858 0.456723C7.58866 0.155195 6.80633 -1.17411e-08 6.01626 0C4.42065 2.37122e-08 2.89039 0.632141 1.76212 1.75736C0.633854 2.88258 0 4.4087 0 6C0 7.5913 0.633854 9.11742 1.76212 10.2426C2.89039 11.3679 4.42065 12 6.01626 12ZM5.86117 8.42667L9.20354 4.42667L8.17677 3.57333L5.30233 7.01267L3.81498 5.52867L2.86976 6.47133L4.87518 8.47133L5.39257 8.98733L5.86117 8.42667Z"
-      fill="#01891C"
-    />
-  </Svg>
-);
+export default function PreviewPage() {
+  const { id: orderId } = useLocalSearchParams () as { id: string };
+  const { data: order, isLoading, isError, error } = useOrderDetails(orderId);
+  const queryClient = useQueryClient();
+  const orderApi = useMemo(() => new OrderApi(apiConfig), []);
 
-const ShoppingCartCheckoutIcon = () => (
-  <Svg width={24} height={25} viewBox="0 0 24 25" fill="none">
-    <Path
-      d="M7 22.5C6.45 22.5 5.97934 22.3043 5.588 21.913C5.19667 21.5217 5.00067 21.0507 5 20.5C4.99934 19.9493 5.19534 19.4787 5.588 19.088C5.98067 18.6973 6.45134 18.5013 7 18.5C7.54867 18.4987 8.01967 18.6947 8.413 19.088C8.80634 19.4813 9.002 19.952 9 20.5C8.998 21.048 8.80234 21.519 8.413 21.913C8.02367 22.307 7.55267 22.5027 7 22.5ZM17 22.5C16.45 22.5 15.9793 22.3043 15.588 21.913C15.1967 21.5217 15.0007 21.0507 15 20.5C14.9993 19.9493 15.1953 19.4787 15.588 19.088C15.9807 18.6973 16.4513 18.5013 17 18.5C17.5487 18.4987 18.0197 18.6947 18.413 19.088C18.8063 19.4813 19.002 19.952 19 20.5C18.998 21.048 18.8023 21.519 18.413 21.913C18.0237 22.307 17.5527 22.5027 17 22.5ZM3 4.5H2C1.71667 4.5 1.47934 4.404 1.288 4.212C1.09667 4.02 1.00067 3.78267 1 3.5C0.999337 3.21733 1.09534 2.98 1.288 2.788C1.48067 2.596 1.718 2.5 2 2.5H3.65C3.83334 2.5 4.00834 2.55 4.175 2.65C4.34167 2.75 4.46667 2.89167 4.55 3.075L8.525 11.5H15.525L19.15 5C19.2333 4.83333 19.35 4.70833 19.5 4.625C19.65 4.54167 19.8167 4.5 20 4.5C20.3833 4.5 20.671 4.66267 20.863 4.988C21.055 5.31333 21.059 5.64233 20.875 5.975L17.3 12.45C17.1167 12.7833 16.871 13.0417 16.563 13.225C16.255 13.4083 15.9173 13.5 15.55 13.5H8.1L7 15.5H18C18.2833 15.5 18.521 15.596 18.713 15.788C18.905 15.98 19.0007 16.2173 19 16.5C18.9993 16.7827 18.9033 17.0203 18.712 17.213C18.5207 17.4057 18.2833 17.5013 18 17.5H7C6.25 17.5 5.679 17.175 5.287 16.525C4.895 15.875 4.88267 15.2167 5.25 14.55L6.6 12.1L3 4.5ZM12.175 7.5H9C8.71667 7.5 8.47934 7.404 8.288 7.212C8.09667 7.02 8.00067 6.78267 8 6.5C7.99934 6.21733 8.09534 5.98 8.288 5.788C8.48067 5.596 8.718 5.5 9 5.5H12.175L11.275 4.6C11.075 4.4 10.979 4.16667 10.987 3.9C10.995 3.63333 11.0993 3.4 11.3 3.2C11.5 3.01667 11.7333 2.92067 12 2.912C12.2667 2.90333 12.5 2.99933 12.7 3.2L15.3 5.8C15.5 6 15.6 6.23333 15.6 6.5C15.6 6.76667 15.5 7 15.3 7.2L12.7 9.8C12.5167 9.98333 12.2877 10.0793 12.013 10.088C11.7383 10.0967 11.5007 10.0007 11.3 9.8C11.1167 9.61667 11.025 9.38333 11.025 9.1C11.025 8.81667 11.1167 8.58333 11.3 8.4L12.175 7.5Z"
-      fill="white"
-    />
-  </Svg>
-);
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: ({ newStatus }: { newStatus: OrderStatus }) => {
+      if (!orderId) throw new Error('Order ID is missing');
+      return orderApi.orderIdStatusPatch({ status: newStatus }, orderId);
+    },
+    onSuccess: () => {
+      toast.success('Order status updated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['orderDetails', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['vendorOrders'] });
+      router.push({
+        pathname: '/(private)/orders/verify-order-code',
+        params: { orderId },
+      });
+    },
+    onError: (error: any) => {
+      // Default error message
+      let errorMessage = "Failed to update status. Please try again.";
 
-const ArrowRightIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12.8333 16.375L17 12M17 12L12.8333 7.625M17 12H7"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+      if (error.response && error.response.data && error.response.data.error) {
+        // This catches the specific error message sent from your backend API, like:
+        // { error: "Cannot transition from 'currently_shopping' to 'delivered'." }
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        // This will catch network errors or other issues where the API didn't respond.
+        errorMessage = error.message;
+      }
 
-interface ShoppingItem {
-  id: string;
-  image: string;
-  status: "confirmed";
-  foundCount: string;
-  description: string;
-  price: string;
-  perishable?: boolean;
-}
+      toast.error(errorMessage);
+    },
+  });
 
-const SHOPPING_ITEMS: ShoppingItem[] = [
-  {
-    id: "1",
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/b15e90ad66573202e16cb0681e9db93877e30680",
-    status: "confirmed",
-    foundCount: "2 of 2 found",
-    description:
-      "Valbest fully cooked chicken Nugget- frozen, 9g protein per 4 nugget serving, 24 0z (1.5lb)",
-    price: "$3.88",
-  },
-  {
-    id: "2",
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/b15e90ad66573202e16cb0681e9db93877e30680",
-    status: "confirmed",
-    foundCount: "2 of 2 found",
-    description:
-      "Valbest fully cooked chicken Nugget- frozen, 9g protein per 4 nugget serving, 24 0z (1.5lb)",
-    price: "$3.88",
-  },
-  {
-    id: "3",
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/f01bb60245c119c55bf9106107aa831fc02d8d93",
-    status: "confirmed",
-    foundCount: "3 of 3 found",
-    description:
-      "Valbest fully cooked chicken Nugget- frozen, 9g protein per 4 nugget serving, 24 0z (1.5lb)",
-    price: "$3.88",
-    perishable: true,
-  },
-  {
-    id: "4",
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/f01bb60245c119c55bf9106107aa831fc02d8d93",
-    status: "confirmed",
-    foundCount: "3 of 3 found",
-    description:
-      "Valbest fully cooked chicken Nugget- frozen, 9g protein per 4 nugget serving, 24 0z (1.5lb)",
-    price: "$3.88",
-    perishable: true,
-  },
-];
 
-export default function PreviewPageScreen() {
+  const groupedItems = useMemo(() => {
+    const items = order?.orderItems ?? [];
+    const relevantItems = items.filter(item => item.status === 'FOUND' || item.status === 'REPLACED' || item.status === 'NOT_FOUND');
+
+    return relevantItems.reduce((acc, item) => {
+      const categoryName = item.vendorProduct?.categories?.[0]?.name || 'Uncategorized';
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
+      }
+      acc[categoryName].push(item);
+      return acc;
+    }, {} as GroupedItems);
+  }, [order]);
+
   const handleGoBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    }
+    router.back();
   };
 
   const handleNotifications = () => {
-    router.push("/(tabs)/inbox");
+    console.log('Open notifications');
   };
 
-  const handleSupport = () => {
-    router.push("/(tabs)/help");
+  const handleCompletedBagging = () => {
+    if (!orderId) {
+      toast.error('Order ID is missing.');
+      return;
+    }
+    if (!order?.deliveryMethod) {
+      toast.error('Delivery method is unknown.');
+      return;
+    }
+
+    // Set status to completed_bagging as requested
+    updateOrderStatusMutation.mutate({ newStatus: 'completed_bagging' as OrderStatus });
   };
 
-  const handleCheckout = () => {
-    console.log("Go to checkout");
-  };
-
-  const handleNext = () => {
-    console.log("Next page");
-  };
+  const postBaggingStatuses: OrderStatus[] = [
+    'ready_for_pickup',
+    'ready_for_delivery',
+    'accepted_for_delivery',
+    'en_route_to_delivery',
+    'delivered',
+    'picked_up_by_customer',
+  ];
+  const showCompletedBaggingButton = !postBaggingStatuses.includes(order?.orderStatus as OrderStatus);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.primary }]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <ArrowBackSVG width={30} height={30} color="#000000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Preview</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton}>
-            <View style={styles.iconCircle}>
-              <NotificationSVG width={24} height={24} color="#000000" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <View style={styles.iconCircle}>
-              <SupportSVG width={24} height={24} color="#000000" />
-            </View>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Svg width="30" height="30" viewBox="0 0 31 30" fill="none">
+            <Path 
+              d="M20.1278 21.993C20.3661 22.2135 20.5 22.5125 20.5 22.8243C20.5 23.1361 20.3661 23.4352 20.1278 23.6556C19.8895 23.8761 19.5662 24 19.2292 24C18.8921 24 18.5689 23.8761 18.3306 23.6556L9.87313 15.8313C9.75486 15.7223 9.66102 15.5927 9.59699 15.4501C9.53296 15.3074 9.5 15.1545 9.5 15C9.5 14.8455 9.53296 14.6926 9.59699 14.5499C9.66102 14.4073 9.75486 14.2777 9.87313 14.1687L18.3306 6.34435C18.5689 6.12387 18.8921 6 19.2292 6C19.5662 6 19.8895 6.12387 20.1278 6.34435C20.3661 6.56483 20.5 6.86387 20.5 7.17568C20.5 7.48749 20.3661 7.78653 20.1278 8.00702L12.57 14.999L20.1278 21.993Z" 
+              fill="white"
+            />
+          </Svg>
+        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Preview</Text>
+        
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={handleNotifications} style={styles.headerAction}>
+            <Svg width="24" height="24" viewBox="0 0 25 24" fill="none">
+              <Path 
+                d="M9.145 20.5C9.36103 21.2219 9.80417 21.8549 10.4086 22.3049C11.013 22.755 11.7464 22.998 12.5 22.998C13.2536 22.998 13.987 22.755 14.5914 22.3049C15.1958 21.8549 15.639 21.2219 15.855 20.5H9.145ZM3.5 19.5H21.5V16.5L19.5 13.5V8.5C19.5 7.58075 19.3189 6.6705 18.9672 5.82122C18.6154 4.97194 18.0998 4.20026 17.4497 3.55025C16.7997 2.90024 16.0281 2.38463 15.1788 2.03284C14.3295 1.68106 13.4193 1.5 12.5 1.5C11.5807 1.5 10.6705 1.68106 9.82122 2.03284C8.97194 2.38463 8.20026 2.90024 7.55025 3.55025C6.90024 4.20026 6.38463 4.97194 6.03284 5.82122C5.68106 6.6705 5.5 7.58075 5.5 8.5V13.5L3.5 16.5V19.5Z" 
+                fill="white"
+              />
+            </Svg>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.tipCard}>
-          <View style={styles.tipIconContainer}>
-            <LightBulbIcon />
-          </View>
-          <Text style={styles.tipText}>
-            Cross check all shopping items and make sure the list is complete
-          </Text>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-
-        <View style={styles.itemsList}>
-          {SHOPPING_ITEMS.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
-              <View style={styles.itemDetails}>
-                <View style={styles.itemHeader}>
-                  <View style={styles.statusContainer}>
-                    <CheckmarkIcon />
-                    <Text style={styles.statusText}>Confirmed</Text>
-                  </View>
-                  <Text style={styles.foundText}>{item.foundCount}</Text>
-                </View>
-                <Text style={styles.itemDescription}>{item.description}</Text>
-                <View style={styles.itemFooter}>
-                  <Text style={styles.itemPrice}>{item.price}</Text>
-                  {item.perishable && (
-                    <View style={styles.perishableBadge}>
-                      <Text style={styles.perishableText}>Perishable</Text>
-                    </View>
-                  )}
-                </View>
+      ) : isError ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Error: {error?.message || 'Failed to load order.'}</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            {/* Tip Card */}
+            <View style={styles.tipCard}>
+              <View style={styles.tipContent}>
+                <InfoIcon />
+                <Text style={styles.tipText}>
+                  Cross-check all shopping items and make sure the list is complete. Then proceed to bagging. Click on the button below to complete the bagging process.
+                </Text>
               </View>
             </View>
-          ))}
-        </View>
 
-        <View style={styles.pagination}>
-          <Text style={styles.paginationText}>Showing 1-10 of 20</Text>
-          <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-            <Text style={styles.nextText}>Next</Text>
-            <ArrowRightIcon />
+            {/* Items List */}
+            {Object.keys(groupedItems).length > 0 ? (
+              Object.entries(groupedItems).map(([category, items]) => (
+                <View key={category} style={styles.categorySection}>
+                  <Text style={styles.categoryTitle}>{category}</Text>
+                  {items.map((item) => <PreviewItemCard key={item.id} item={item} />)}
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No items have been found for this order yet.</Text>
+            )}
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Proceed to Bagging Button */}
+      {showCompletedBaggingButton && (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.proceedButton, updateOrderStatusMutation.isPending && styles.disabledButton]}
+            onPress={handleCompletedBagging}
+            disabled={updateOrderStatusMutation.isPending}
+          >
+            <Svg width="24" height="24" viewBox="0 0 25 25" fill="none">
+              <Path
+                d="M7.5 22.5C6.95 22.5 6.47934 22.3043 6.088 21.913C5.69667 21.5217 5.50067 21.0507 5.5 20.5C5.49934 19.9493 5.69534 19.4787 6.088 19.088C6.48067 18.6973 6.95134 18.5013 7.5 18.5C8.04867 18.4987 8.51967 18.6947 8.913 19.088C9.30634 19.4813 9.502 19.952 9.5 20.5C9.498 21.048 9.30234 21.519 8.913 21.913C8.52367 22.307 8.05267 22.5027 7.5 22.5ZM17.5 22.5C16.95 22.5 16.4793 22.3043 16.088 21.913C15.6967 21.5217 15.5007 21.0507 15.5 20.5C15.4993 19.9493 15.6953 19.4787 16.088 19.088C16.4807 18.6973 16.9513 18.5013 17.5 18.5C18.0487 18.4987 18.5197 18.6947 18.913 19.088C19.3063 19.4813 19.502 19.952 19.5 20.5C19.498 21.048 19.3023 21.519 18.913 21.913C18.5237 22.307 18.0527 22.5027 17.5 22.5ZM3.5 4.5H2.5C2.21667 4.5 1.97934 4.404 1.788 4.212C1.59667 4.02 1.50067 3.78267 1.5 3.5C1.49934 3.21733 1.59534 2.98 1.788 2.788C1.98067 2.596 2.218 2.5 2.5 2.5H4.15C4.33334 2.5 4.50834 2.55 4.675 2.65C4.84167 2.75 4.96667 2.89167 5.05 3.075L9.025 11.5H16.025L19.65 5C19.7333 4.83333 19.85 4.70833 20 4.625C20.15 4.54167 20.3167 4.5 20.5 4.5C20.8833 4.5 21.171 4.66267 21.363 4.988C21.555 5.31333 21.559 5.64233 21.375 5.975L17.8 12.45C17.6167 12.7833 17.371 13.0417 17.063 13.225C16.755 13.4083 16.4173 13.5 16.05 13.5H8.6L7.5 15.5H18.5C18.7833 15.5 19.021 15.596 19.213 15.788C19.405 15.98 19.5007 16.2173 19.5 16.5C19.4993 16.7827 19.4033 17.0203 19.212 17.213C19.0207 17.4057 18.7833 17.5013 18.5 17.5H7.5C6.75 17.5 6.179 17.175 5.787 16.525C5.395 15.875 5.38267 15.2167 5.75 14.55L7.1 12.1L3.5 4.5ZM12.675 7.5H9.5C9.21667 7.5 8.97934 7.404 8.788 7.212C8.59667 7.02 8.50067 6.78267 8.5 6.5C8.49934 6.21733 8.59534 5.98 8.788 5.788C8.98067 5.596 9.218 5.5 9.5 5.5H12.675L11.775 4.6C11.575 4.4 11.479 4.16667 11.487 3.9C11.495 3.63333 11.5993 3.4 11.8 3.2C12 3.01667 12.2333 2.92067 12.5 2.912C12.7667 2.90333 13 2.99933 13.2 3.2L15.8 5.8C16 6 16.1 6.23333 16.1 6.5C16.1 6.76667 16 7 15.8 7.2L13.2 9.8C13.0167 9.98333 12.7877 10.0793 12.513 10.088C12.2383 10.0967 12.0007 10.0007 11.8 9.8C11.6167 9.61667 11.525 9.38333 11.525 9.1C11.525 8.81667 11.6167 8.58333 11.8 8.4L12.675 7.5Z"
+                fill="white"
+              />
+            </Svg>
+            <Text style={styles.proceedButtonText}>
+              {updateOrderStatusMutation.isPending ? 'Processing...' : 'Completed Bagging'}
+            </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.checkoutButton}
-          onPress={handleCheckout}
-        >
-          <ShoppingCartCheckoutIcon />
-          <Text style={styles.checkoutText}>Go to Checkout</Text>
-        </TouchableOpacity>
+      )}
       </View>
     </SafeAreaView>
   );
 }
 
+interface PreviewItemCardProps {
+  item: OrderItem;
+}
+
+const PreviewItemCard = ({ item }: PreviewItemCardProps) => {
+  return (
+    <View style={styles.itemCard}>
+      <View style={styles.itemContent}>
+        <View style={styles.itemImageContainer}>
+          <Image source={{ uri: item.vendorProduct?.images?.[0] || 'https://via.placeholder.com/100' }} style={styles.itemImage} />
+        </View>
+        
+        <View style={styles.itemDetails}>
+          <View style={styles.itemHeader}>
+            {item.status === 'NOT_FOUND' ? (
+              <>
+                <View style={styles.notFoundBadge}>
+                  <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <Path 
+                      d="M6 0C2.68629 0 0 2.68629 0 6C0 9.31371 2.68629 12 6 12C9.31371 12 12 9.31371 12 6C12 2.68629 9.31371 0 6 0ZM8.48528 7.07107L7.07107 8.48528L6 7.41421L4.92893 8.48528L3.51472 7.07107L4.58579 6L3.51472 4.92893L4.92893 3.51472L6 4.58579L7.07107 3.51472L8.48528 4.92893L7.41421 6L8.48528 7.07107Z"
+                      fill="#C70000"
+                    />
+                  </Svg>
+                  <Text style={styles.notFoundText}>Not Found</Text>
+                </View>
+                <Text style={styles.foundText}>
+                  0 of {item.quantity} found
+                </Text>
+                </>
+            ) : (
+              <>
+                <View style={styles.confirmedBadge}>
+                  <Svg width="12" height="12" viewBox="0 0 13 12" fill="none">
+                    <Path 
+                      fillRule="evenodd" 
+                      clipRule="evenodd" 
+                      d="M6.01626 12C6.80633 12 7.58866 11.8448 8.31858 11.5433C9.04851 11.2417 9.71174 10.7998 10.2704 10.2426C10.8291 9.68549 11.2722 9.02405 11.5746 8.2961C11.8769 7.56815 12.0325 6.78793 12.0325 6C12.0325 5.21207 11.8769 4.43185 11.5746 3.7039C11.2722 2.97595 10.8291 2.31451 10.2704 1.75736C9.71174 1.20021 9.04851 0.758251 8.31858 0.456723C7.58866 0.155195 6.80633 -1.17411e-08 6.01626 0C4.42065 2.37122e-08 2.89039 0.632141 1.76212 1.75736C0.633854 2.88258 0 4.4087 0 6C0 7.5913 0.633854 9.11742 1.76212 10.2426C2.89039 11.3679 4.42065 12 6.01626 12ZM5.86117 8.42667L9.20354 4.42667L8.17677 3.57333L5.30233 7.01267L3.81498 5.52867L2.86976 6.47133L4.87518 8.47133L5.39257 8.98733L5.86117 8.42667Z" 
+                      fill="#0085FF"
+                    />
+                  </Svg>
+                  <Text style={styles.confirmedText}>Confirmed</Text>
+                </View>
+                <Text style={styles.foundText}>
+                  {item.quantityFound ?? item.quantity} of {item.quantity} found
+                </Text>
+              </>
+            )}
+          </View>
+          
+          <Text style={styles.itemName} numberOfLines={2}>{item.vendorProduct?.name}</Text>
+          
+          <View style={styles.itemFooter}>
+            <Text style={styles.itemPrice}>${item.vendorProduct?.price?.toFixed(2)}</Text>
+            {(item.vendorProduct as any)?.isPerishable && (
+              <View style={styles.perishableBadge}>
+                <Text style={styles.perishableText}>Perishable</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.background,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontFamily: 'Open Sans',
+    fontSize: 14,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 27,
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: 19,
+    paddingBottom: 16,
+    backgroundColor: colors.primary,
   },
   backButton: {
     width: 30,
     height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontFamily: "Raleway",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#000",
+    flex: 1,
+    marginLeft: 12,
+    color: colors.background,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.accent,
     lineHeight: 22,
   },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+  headerAction: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
+  scrollContainer: {
+    flex: 1,
   },
   content: {
-    flex: 1,
     paddingHorizontal: 27,
+    paddingTop: spacing.lg + spacing.sm,
+    gap: spacing.lg + spacing.sm,
+    paddingBottom: spacing.xl,
   },
   tipCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    gap: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#B4BED4",
-    backgroundColor: "#FFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    elevation: 2,
-    marginBottom: 23,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#E6F2FF', // A light blue background
   },
-  tipIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 32,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
+  tipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   tipText: {
     flex: 1,
-    fontFamily: "Open Sans",
     fontSize: 12,
-    fontWeight: "400",
-    color: "#898A8D",
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.normal,
+    color: '#0085FF', // Blue text
+    lineHeight: 16,
   },
   itemsList: {
     gap: 14,
   },
   itemCard: {
-    flexDirection: "row",
-    padding: 16,
-    gap: 6,
-    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: 14,
+    paddingHorizontal: 18,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: "#B4BED4",
-    backgroundColor: "#FFF",
+    borderColor: '#B4BED4',
+    backgroundColor: colors.background,
+  },
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  itemImageContainer: {
+    width: 81,
+    height: 76,
+    padding: 10,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   itemImage: {
     width: 57,
     height: 57,
-    borderRadius: 16,
+    resizeMode: 'contain',
   },
   itemDetails: {
     flex: 1,
     gap: 6,
   },
   itemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  statusText: {
-    fontFamily: "Open Sans",
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#000",
-  },
-  foundText: {
-    fontFamily: "Open Sans",
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#7C7B7B",
-    textAlign: "right",
-  },
-  itemDescription: {
-    fontFamily: "Open Sans",
-    fontSize: 12,
-    fontWeight: "400",
-    color: "#484C52",
-  },
-  itemFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  itemPrice: {
-    fontFamily: "Open Sans",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#000",
-  },
-  perishableBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: "rgba(33, 196, 93, 0.10)",
-  },
-  perishableText: {
-    fontFamily: "Open Sans",
-    fontSize: 10,
-    fontWeight: "400",
-    color: "#21C45D",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 23,
-    marginBottom: 24,
-  },
-  paginationText: {
-    fontFamily: "Open Sans",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#202224",
-    opacity: 0.8,
-  },
-  nextButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  confirmedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
-  nextText: {
-    fontFamily: "Nunito Sans",
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#000",
+  confirmedText: {
+    fontSize: 12,
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.bold,
+    color: colors.textPrimary,
+    lineHeight: 16,
   },
-  footer: {
-    paddingHorizontal: 22,
-    paddingVertical: 16,
+  notFoundBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  checkoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 50,
-    borderRadius: 16,
-    backgroundColor: "#0085FF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    elevation: 2,
+  notFoundText: {
+    fontSize: 12,
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.bold,
+    color: '#C70000', // Red color for not found
+    lineHeight: 16,
+    textTransform: 'uppercase',
   },
-  checkoutText: {
-    fontFamily: "Raleway",
+  foundText: {
+    fontSize: 12,
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.bold,
+    color: '#7C7B7B',
+    lineHeight: 16,
+  },
+  itemName: {
+    fontSize: 14,
+    fontFamily: "Open Sans",
+    fontWeight: '700',
+    color: '#484C52',
+    lineHeight: 16,
+  },
+  itemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.bold,
+    color: colors.textPrimary,
+    lineHeight: 19,
+  },
+  perishableBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 133, 255, 0.10)',
+  },
+  perishableText: {
+    fontSize: 10,
+    fontFamily: typography.families.secondary,
+    fontWeight: typography.weights.normal,
+    color: '#0085FF',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  categorySection: {
+    marginBottom: spacing.lg,
+  },
+  categoryTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#FFF",
-    textAlign: "center",
+    fontFamily: typography.families.accent,
+    fontWeight: typography.weights.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  buttonContainer: {
+    padding: spacing.lg,
+    paddingHorizontal: 22,
+    backgroundColor: colors.background,
+  },
+  proceedButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    paddingHorizontal: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    ...shadows.md,
+  },
+  proceedButtonText: {
+    fontSize: typography.sizes.base,
+    fontFamily: typography.families.accent,
+    fontWeight: typography.weights.bold,
+    color: colors.background,
     lineHeight: 25,
+    textAlign: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#A9A9A9',
   },
 });

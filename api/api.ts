@@ -41,6 +41,7 @@ export * from './endpoints/notification-api';
 export * from './endpoints/order-api';
 export * from './endpoints/product-api';
 export * from './endpoints/rating-api';
+export * from './endpoints/return-api';
 export * from './endpoints/staff-api';
 export * from './endpoints/support-api';
 export * from './endpoints/tag-api';
