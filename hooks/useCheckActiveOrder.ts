@@ -56,6 +56,12 @@ export const useCheckActiveOrder = () => {
         break;
 
       case OrderStatus.ArrivedAtStore:
+        router.replace({
+          pathname: '/(private)/orders/store-arrived',
+          params: { id: orderId },
+        });
+        break;
+
       case OrderStatus.CurrentlyShopping:
         router.replace({
           pathname: '/(private)/orders/finding-items',
@@ -72,6 +78,12 @@ export const useCheckActiveOrder = () => {
 
       // --- Delivery Stage ---
       case OrderStatus.ReadyForDelivery:
+        router.replace({
+          pathname: '/(private)/orders/verify-order-code',
+          params: { orderId: orderId },
+        });
+        break;
+
       case OrderStatus.EnRouteToDelivery:
         router.replace({
           pathname: '/(private)/orders/start-trip',
@@ -79,14 +91,6 @@ export const useCheckActiveOrder = () => {
         });
         break;
 
-      case OrderStatus.ArrivedAtStore:
-        router.replace({
-          pathname: '/(private)/orders/verify-order-code',
-          params: { orderId: orderId },
-        });
-        break;
-        // If the current status is arrived_at_store, we need to check if the order reqyires shopping, if it does, go to finding-items.
-        // If the order does not require shopping, go to verify-order-code.
 
       // --- Return Stage ---
       /* case OrderStatus.EnRouteToReturnPickup:

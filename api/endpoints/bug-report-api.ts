@@ -76,11 +76,12 @@ export const BugReportApiAxiosParamCreator = function (configuration?: Configura
          * 
          * @summary Report a bug
          * @param {string} description A description of the bug.
+         * @param {string} [orderId] (Optional) The ID of the order related to the bug.
          * @param {File} [image] (Optional) An image of the bug.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        bugReportsPost: async (description: string, image?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        bugReportsPost: async (description: string, orderId?: string, image?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'description' is not null or undefined
             assertParamExists('bugReportsPost', 'description', description)
             const localVarPath = `/bug-reports`;
@@ -103,6 +104,10 @@ export const BugReportApiAxiosParamCreator = function (configuration?: Configura
 
             if (description !== undefined) { 
                 localVarFormParams.append('description', description as any);
+            }
+    
+            if (orderId !== undefined) { 
+                localVarFormParams.append('orderId', orderId as any);
             }
     
             if (image !== undefined) { 
@@ -149,12 +154,13 @@ export const BugReportApiFp = function(configuration?: Configuration) {
          * 
          * @summary Report a bug
          * @param {string} description A description of the bug.
+         * @param {string} [orderId] (Optional) The ID of the order related to the bug.
          * @param {File} [image] (Optional) An image of the bug.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async bugReportsPost(description: string, image?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.bugReportsPost(description, image, options);
+        async bugReportsPost(description: string, orderId?: string, image?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.bugReportsPost(description, orderId, image, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BugReportApi.bugReportsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -183,12 +189,13 @@ export const BugReportApiFactory = function (configuration?: Configuration, base
          * 
          * @summary Report a bug
          * @param {string} description A description of the bug.
+         * @param {string} [orderId] (Optional) The ID of the order related to the bug.
          * @param {File} [image] (Optional) An image of the bug.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        bugReportsPost(description: string, image?: File, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.bugReportsPost(description, image, options).then((request) => request(axios, basePath));
+        bugReportsPost(description: string, orderId?: string, image?: File, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.bugReportsPost(description, orderId, image, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -213,12 +220,13 @@ export class BugReportApi extends BaseAPI {
      * 
      * @summary Report a bug
      * @param {string} description A description of the bug.
+     * @param {string} [orderId] (Optional) The ID of the order related to the bug.
      * @param {File} [image] (Optional) An image of the bug.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public bugReportsPost(description: string, image?: File, options?: RawAxiosRequestConfig) {
-        return BugReportApiFp(this.configuration).bugReportsPost(description, image, options).then((request) => request(this.axios, this.basePath));
+    public bugReportsPost(description: string, orderId?: string, image?: File, options?: RawAxiosRequestConfig) {
+        return BugReportApiFp(this.configuration).bugReportsPost(description, orderId, image, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

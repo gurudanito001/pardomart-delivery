@@ -14,14 +14,18 @@
 
 
 
-export interface UpdateTipPayload {
+export interface DeliverySlotTimeSlotsInner {
     /**
-     * Optional. Tip for the shopper.
+     * The start time of the slot in UTC (ISO 8601 format).
      */
-    'shopperTip'?: number;
+    'start'?: string;
     /**
-     * Optional. Tip for the delivery person.
+     * The end time of the slot in UTC (ISO 8601 format).
      */
-    'deliveryPersonTip'?: number;
+    'end'?: string;
+    /**
+     * The user-friendly display string in the vendor\'s local time.
+     */
+    'display'?: string;
 }
 

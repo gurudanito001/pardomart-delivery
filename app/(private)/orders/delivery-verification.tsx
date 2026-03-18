@@ -29,7 +29,7 @@ export default function DeliveryVerificationScreen() {
   const completeDeliveryMutation = useMutation({
     mutationFn: async (data: { image: string }) => {
       if (!orderId) throw new Error("Order ID is missing");
-      return orderApi.orderOrderIdCompleteDeliveryPost({ image: data.image } as any, orderId);
+      return orderApi.orderOrderIdCompleteDeliveryPost({ proofOfDeliveryImage: data.image } as any, orderId);
     },
     onSuccess: () => {
       toast.success("Delivery verified successfully");

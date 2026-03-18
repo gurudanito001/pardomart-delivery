@@ -15,10 +15,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { DeliverySlotTimeSlotsInner } from './delivery-slot-time-slots-inner';
+import type { Ad } from './ad';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { OrderDeliveryAvailableGet200ResponsePagination } from './order-delivery-available-get200-response-pagination';
 
-export interface DeliverySlot {
-    'date'?: string;
-    'timeSlots'?: Array<DeliverySlotTimeSlotsInner>;
+export interface PaginatedAds {
+    'data'?: Array<Ad>;
+    'pagination'?: OrderDeliveryAvailableGet200ResponsePagination;
 }
 

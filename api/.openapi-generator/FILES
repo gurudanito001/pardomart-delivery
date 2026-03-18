@@ -73,6 +73,7 @@ docs/DeliveryPersonLocation.md
 docs/DeliveryPersonsAdminOverviewGet200Response.md
 docs/DeliveryPersonsApi.md
 docs/DeliverySlot.md
+docs/DeliverySlotTimeSlotsInner.md
 docs/Device.md
 docs/DevicesPostRequest.md
 docs/EarningsApi.md
@@ -122,6 +123,7 @@ docs/OrderOrderIdMessagesReadPatch200Response.md
 docs/OrderStatus.md
 docs/OrderWithRelations.md
 docs/OrdersOrderIdDeliveryLocationPostRequest.md
+docs/PaginatedAds.md
 docs/PaginatedNotifications.md
 docs/PaginatedSupportTickets.md
 docs/PaginatedUsers.md
@@ -316,6 +318,7 @@ models/delivery-method.ts
 models/delivery-path-point.ts
 models/delivery-person-location.ts
 models/delivery-persons-admin-overview-get200-response.ts
+models/delivery-slot-time-slots-inner.ts
 models/delivery-slot.ts
 models/device.ts
 models/devices-post-request.ts
@@ -356,6 +359,7 @@ models/order-status.ts
 models/order-with-relations.ts
 models/order.ts
 models/orders-order-id-delivery-location-post-request.ts
+models/paginated-ads.ts
 models/paginated-notifications.ts
 models/paginated-support-tickets.ts
 models/paginated-users.ts

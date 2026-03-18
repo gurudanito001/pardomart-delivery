@@ -39,14 +39,16 @@ export default function PreviewPage() {
       if (!orderId) throw new Error('Order ID is missing');
       return orderApi.orderIdStatusPatch({ status: newStatus }, orderId);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast.success('Order status updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['orderDetails', orderId] });
       queryClient.invalidateQueries({ queryKey: ['vendorOrders'] });
-      router.push({
-        pathname: '/(private)/orders/verify-order-code',
-        params: { orderId },
-      });
+      if (variables.newStatus === 'ready_for_delivery') {
+        router.push({
+          pathname: '/(private)/orders/verify-order-code',
+          params: { orderId },
+        });
+      }
     },
     onError: (error: any) => {
       // Default error message
@@ -88,7 +90,7 @@ export default function PreviewPage() {
     console.log('Open notifications');
   };
 
-  const handleCompletedBagging = () => {
+  const handleMainAction = () => {
     if (!orderId) {
       toast.error('Order ID is missing.');
       return;
@@ -98,8 +100,12 @@ export default function PreviewPage() {
       return;
     }
 
-    // Set status to completed_bagging as requested
-    updateOrderStatusMutation.mutate({ newStatus: 'completed_bagging' as OrderStatus });
+    if (order.orderStatus === 'completed_bagging') {
+      updateOrderStatusMutation.mutate({ newStatus: 'ready_for_delivery' as OrderStatus });
+    } else {
+      // Set status to completed_bagging as requested
+      updateOrderStatusMutation.mutate({ newStatus: 'completed_bagging' as OrderStatus });
+    }
   };
 
   const postBaggingStatuses: OrderStatus[] = [
@@ -111,6 +117,7 @@ export default function PreviewPage() {
     'picked_up_by_customer',
   ];
   const showCompletedBaggingButton = !postBaggingStatuses.includes(order?.orderStatus as OrderStatus);
+  const isCompletedBagging = order?.orderStatus === 'completed_bagging';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.primary }]} edges={['top', 'left', 'right']}>
@@ -183,7 +190,7 @@ export default function PreviewPage() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.proceedButton, updateOrderStatusMutation.isPending && styles.disabledButton]}
-            onPress={handleCompletedBagging}
+            onPress={handleMainAction}
             disabled={updateOrderStatusMutation.isPending}
           >
             <Svg width="24" height="24" viewBox="0 0 25 25" fill="none">
@@ -193,7 +200,11 @@ export default function PreviewPage() {
               />
             </Svg>
             <Text style={styles.proceedButtonText}>
-              {updateOrderStatusMutation.isPending ? 'Processing...' : 'Completed Bagging'}
+              {updateOrderStatusMutation.isPending 
+                ? 'Processing...' 
+                : isCompletedBagging 
+                  ? 'Complete Shopping' 
+                  : 'Completed Bagging'}
             </Text>
           </TouchableOpacity>
         </View>

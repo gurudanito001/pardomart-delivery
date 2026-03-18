@@ -4,6 +4,7 @@ import React from "react";
 export default function OrdersLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+       <Stack.Screen name="index" />
        <Stack.Screen name="shopping-list" />
        <Stack.Screen name="location-check" />
        <Stack.Screen name="finding-items" />

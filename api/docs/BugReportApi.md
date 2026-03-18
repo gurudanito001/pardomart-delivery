@@ -77,10 +77,12 @@ const configuration = new Configuration();
 const apiInstance = new BugReportApi(configuration);
 
 let description: string; //A description of the bug. (default to undefined)
+let orderId: string; //(Optional) The ID of the order related to the bug. (optional) (default to undefined)
 let image: File; //(Optional) An image of the bug. (optional) (default to undefined)
 
 const { status, data } = await apiInstance.bugReportsPost(
     description,
+    orderId,
     image
 );
 ```
@@ -90,6 +92,7 @@ const { status, data } = await apiInstance.bugReportsPost(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **description** | [**string**] | A description of the bug. | defaults to undefined|
+| **orderId** | [**string**] | (Optional) The ID of the order related to the bug. | (optional) defaults to undefined|
 | **image** | [**File**] | (Optional) An image of the bug. | (optional) defaults to undefined|
 
 

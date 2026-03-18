@@ -1,6 +1,5 @@
 import { useAuth } from "@/contexts/AppProvider";
-import { useUser } from "@/hooks/api/useUser";
-import { Redirect, router } from "expo-router";
+import { router } from "expo-router";
 import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
@@ -17,10 +16,8 @@ import {
 import {
   NotificationSVG,
   SupportSVG,
-  DoubleArrowSVG,
   OrdersIconSVG,
 } from "../../../components/icons";
-import { MenuButton } from "../../../components/MenuButton";
 import OrderCard, { OrderCardProps } from "../../../components/OrderCard";
 import { toast } from "sonner-native";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +29,6 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function OrdersScreen() {
   const { state: { user } } = useAuth();
-  const { updateProfile, loading } = useUser();
   
   const orderApi = useMemo(() => new OrderApi(apiConfig), []);
 
@@ -42,15 +38,18 @@ export default function OrdersScreen() {
       const response = await orderApi.orderDeliveryMeGet();
       return response.data;
     },
-    enabled: !!user?.online,
+    enabled: !!user,
     refetchInterval: 15000,
   });
+
+  const [selectedTab, setSelectedTab] = useState<'pending' | 'completed'>('pending');
 
   const orders = useMemo(() => {
     const rawItems = (myOrdersData as any)?.data || (myOrdersData as any)?.items || (Array.isArray(myOrdersData) ? myOrdersData : []);
     
     return rawItems.map((order: any) => ({
       id: order.id,
+      status: order.orderStatus,
       type: (order.shoppingMethod === 'delivery_person' ? 'shop-deliver' : 'deliver') as "shop-deliver" | "deliver",
       total: `$${Number(order.totalAmount || 0).toFixed(2)}`,
       customerName: order.customerName || order.user?.name || 'Customer',
@@ -60,6 +59,14 @@ export default function OrdersScreen() {
     }));
   }, [myOrdersData]);
 
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order: any) => {
+      const isCompleted = order.status === 'delivered' || order.status === 'picked_up_by_customer' || order.status === 'cancelled';
+      if (selectedTab === 'completed') return isCompleted;
+      return !isCompleted; // Pending statuses
+    });
+  }, [orders, selectedTab]);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -67,16 +74,6 @@ export default function OrdersScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
-
-  const handleGoOffline = async () => {
-    try {
-      await updateProfile({ online: false });
-      toast.success("You are now offline");
-    } catch (error: any) {
-      console.error("Failed to go offline:", error);
-      toast.error(error?.message || "Failed to go offline");
-    }
-  };
 
   const handlePreviewOrder = (orderId: string) => {
     router.push({
@@ -88,18 +85,10 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      {/* World Map Background */}
-      <Image
-        source={{
-          uri: "https://api.builder.io/api/v1/image/assets/TEMP/3619225119bd10f6a1c9579a1f7e6b81d11749d1?width=860",
-        }}
-        style={styles.worldMap}
-        resizeMode="cover"
-      />
 
-      {/* Header with Menu and Icons */}
+      {/* Header */}
       <View style={styles.header}>
-
+        <Text style={styles.headerTitle}>My Orders</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <NotificationSVG width={22} height={22} color="#000" />
@@ -110,28 +99,24 @@ export default function OrdersScreen() {
         </View>
       </View>
 
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, selectedTab === "pending" && styles.activeTab]}
+          onPress={() => setSelectedTab("pending")}
+        >
+          <Text style={[styles.tabText, selectedTab === "pending" && styles.activeTabText]}>Pending</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, selectedTab === "completed" && styles.activeTab]}
+          onPress={() => setSelectedTab("completed")}
+        >
+          <Text style={[styles.tabText, selectedTab === "completed" && styles.activeTabText]}>Completed</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Content Container */}
       <View style={styles.contentContainer}>
-        {/* Handle Bar */}
-       {/*  <View style={styles.handleBar} /> */}
-
-        {/* Go Offline Button */}
-        <TouchableOpacity
-          style={styles.goOfflineButton}
-          onPress={handleGoOffline}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <>
-              {/* <View style={styles.offlineIconContainer}>
-                <DoubleArrowSVG width={19} height={20} color="#FFF" />
-              </View> */}
-              <Text style={styles.goOfflineText}>Go Offline</Text>
-            </>
-          )}
-        </TouchableOpacity>
 
         {/* My Orders Section */}
         <View style={styles.myOrdersSection}>
@@ -140,7 +125,7 @@ export default function OrdersScreen() {
               <OrdersIconSVG width={24} height={24} color="#000" />
               <Text style={styles.myOrdersText}>My Orders</Text>
             </View>
-            <Text style={styles.ordersCount}>{orders.length} Orders</Text>
+            <Text style={styles.ordersCount}>{filteredOrders.length} Orders</Text>
           </View>
         </View>
 
@@ -155,10 +140,10 @@ export default function OrdersScreen() {
         >
           {isOrdersLoading ? (
             <ActivityIndicator size="large" color="#0085FF" style={{ marginTop: 20 }} />
-          ) : orders.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 20, color: '#7C8BA0' }}>No available orders found.</Text>
+          ) : filteredOrders.length === 0 ? (
+            <Text style={{ textAlign: 'center', marginTop: 20, color: '#7C8BA0' }}>No {selectedTab} orders found.</Text>
           ) : (
-            orders.map((order: OrderCardProps) => (
+            filteredOrders.map((order: any) => (
               <OrderCard
                 key={order.id}
                 type={order.type}
@@ -182,24 +167,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFF",
   },
-  worldMap: {
-    width: SCREEN_WIDTH,
-    height: 684,
-    position: "absolute",
-    top: 0,
-    left: 0,
-  },
   header: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 21,
-    paddingTop: 20,
-    position: "absolute",
-    top: 15,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+    paddingHorizontal: 25,
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
+  headerTitle: {
+    fontFamily: "Raleway",
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#000000",
+    lineHeight: 28,
   },
   menuButton: {
     width: 40,
@@ -233,66 +214,37 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  contentContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 16,
+  tabContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    height: 650,
+    marginBottom: 10,
+    gap: 12,
   },
-  handleBar: {
-    width: 70,
-    height: 5,
-    backgroundColor: "#EEE",
-    borderRadius: 2.5,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  goOfflineButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#C43D28",
-    borderRadius: 16,
+  tabButton: {
+    flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    elevation: 2,
-    height: 48,
-    position: "relative",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
   },
-  offlineIconContainer: {
-    position: "absolute",
-    left: 4,
-    top: 3.2,
-    backgroundColor: "#851403",
-    borderRadius: 14,
-    width: 49,
-    height: 42,
-    justifyContent: "center",
-    alignItems: "center",
+  activeTab: {
+    backgroundColor: '#0085FF',
+    borderColor: '#0085FF',
   },
-  goOfflineText: {
-    fontSize: 18,
-    fontFamily: "Raleway",
-    fontWeight: "700",
+  tabText: {
+    fontFamily: 'Raleway',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#484C52',
+  },
+  activeTabText: {
     color: "#FFF",
-    textAlign: "center",
-    lineHeight: 25,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 20,
   },
   myOrdersSection: {
     backgroundColor: "#D9EDFF",
